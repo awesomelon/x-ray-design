@@ -1,0 +1,28 @@
+{
+  "name": "x-ray-design",
+  "version": "0.1.0",
+  "private": true,
+  "description": "웹페이지의 디자인 골격을 시각화하는 Chrome 확장 프로그램",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "preact": "^10.29.0"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.3.0",
+    "@preact/preset-vite": "^2.10.4",
+    "@types/chrome": "^0.1.37",
+    "eslint": "^10.0.3",
+    "jsdom": "^29.0.0",
+    "prettier": "^3.8.1",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.0",
+    "vitest": "^4.1.0"
+  }
+}

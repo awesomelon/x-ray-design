@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "X-Ray Design",
+  "version": "0.1.0",
+  "description": "웹페이지의 디자인 골격을 시각화합니다",
+  "permissions": ["activeTab", "sidePanel"],
+  "side_panel": {
+    "default_path": "src/sidepanel/index.html"
+  },
+  "background": {
+    "service_worker": "src/background/service-worker.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content/index.ts"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "X-Ray Design"
+  },
+  "icons": {
+    "16": "src/assets/icon-16.png",
+    "48": "src/assets/icon-48.png",
+    "128": "src/assets/icon-128.png"
+  }
+}

@@ -1,4 +1,4 @@
-import type { FeatureId, TypographyReport, ContrastReport, GridReport, GridSettings, InspectInfo } from './types';
+import type { FeatureId, TypographyReport, ContrastReport, GridReport, GridSettings } from './types';
 
 export type Message =
   | { type: 'TOGGLE_FEATURE'; feature: FeatureId; enabled: boolean }
@@ -7,8 +7,7 @@ export type Message =
   | { type: 'TYPOGRAPHY_REPORT'; data: TypographyReport }
   | { type: 'CONTRAST_REPORT'; data: ContrastReport }
   | { type: 'GRID_REPORT'; data: GridReport }
-  | { type: 'UPDATE_GRID_SETTINGS'; data: GridSettings }
-  | { type: 'INSPECT_REPORT'; data: InspectInfo | null };
+  | { type: 'UPDATE_GRID_SETTINGS'; data: GridSettings };
 
 export function isMessage(value: unknown): value is Message {
   return (

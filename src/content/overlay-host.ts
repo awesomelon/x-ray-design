@@ -30,42 +30,6 @@ export function getOverlayRoot(): ShadowRoot {
     }
     .xray-badge--pass { background: #22c55e; }
     .xray-badge--fail { background: #ef4444; }
-    .xray-margin-overlay {
-      position: fixed;
-      background: rgba(255, 165, 0, 0.3);
-      border: 1px dashed rgba(255, 165, 0, 0.6);
-      pointer-events: none;
-    }
-    .xray-padding-overlay {
-      position: fixed;
-      background: rgba(0, 128, 0, 0.25);
-      border: 1px dashed rgba(0, 128, 0, 0.5);
-      pointer-events: none;
-    }
-    .xray-spacing-label {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      font: bold 10px/1 monospace;
-      color: #fff;
-      padding: 1px 4px;
-      border-radius: 3px;
-      white-space: nowrap;
-      pointer-events: none;
-      z-index: 1;
-    }
-    .xray-spacing-label--margin {
-      background: rgba(200, 120, 0, 0.92);
-    }
-    .xray-spacing-label--padding {
-      background: rgba(0, 110, 0, 0.92);
-    }
-    .xray-spacing-label--float {
-      top: -7px;
-      left: 50%;
-      transform: translateX(-50%);
-    }
     .xray-grid-container {
       position: fixed;
       top: 0;
@@ -89,39 +53,6 @@ export function getOverlayRoot(): ShadowRoot {
       border-left: 1px solid rgba(59, 130, 246, 0.18);
       border-right: 1px solid rgba(59, 130, 246, 0.18);
     }
-    .xray-inspect-content {
-      position: fixed;
-      border: 2px solid #3b82f6;
-      pointer-events: none;
-      z-index: 2147483646;
-    }
-    .xray-inspect-margin {
-      position: fixed;
-      background: rgba(255, 165, 0, 0.25);
-      pointer-events: none;
-    }
-    .xray-inspect-padding {
-      position: fixed;
-      background: rgba(0, 128, 0, 0.25);
-      pointer-events: none;
-    }
-    .xray-inspect-tooltip {
-      position: fixed;
-      background: rgba(20, 20, 20, 0.92);
-      color: #fff;
-      font: 11px/1.5 monospace;
-      padding: 6px 10px;
-      border-radius: 5px;
-      pointer-events: none;
-      z-index: 2147483647;
-      white-space: nowrap;
-      max-width: 320px;
-    }
-    .xray-inspect-tooltip__tag { color: #93c5fd; font-weight: 700; }
-    .xray-inspect-tooltip__dim { color: #fbbf24; }
-    .xray-inspect-tooltip__spacing { display: flex; gap: 8px; margin-top: 2px; }
-    .xray-inspect-tooltip__m { color: #fdba74; }
-    .xray-inspect-tooltip__p { color: #86efac; }
     .xray-drag-highlight {
       position: fixed;
       border: 2px dashed #8b5cf6;

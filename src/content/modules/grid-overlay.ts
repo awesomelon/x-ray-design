@@ -1,4 +1,4 @@
-import { getFeatureLayer } from '../overlay-host';
+import { getFeatureLayer, removeFeatureLayer } from '../overlay-host';
 import type { Message } from '@shared/messages';
 import type { GridReport, GridSettings } from '@shared/types';
 
@@ -141,7 +141,7 @@ function analyze(): GridReport {
 function renderGrid(report: GridReport | null): void {
   if (!report) return;
   const layer = getFeatureLayer('grid');
-  layer.innerHTML = '';
+  layer.replaceChildren();
 
   // 컬럼 그리드
   const container = document.createElement('div');
@@ -208,9 +208,7 @@ export function applyGridSettings(settings: GridSettings): void {
 
 export function deactivateGrid(): void {
   window.removeEventListener('resize', onResize);
-  const layer = getFeatureLayer('grid');
-  layer.innerHTML = '';
-  layer.remove();
+  removeFeatureLayer('grid');
   gridContainer = null;
   baselineEl = null;
   lastReport = null;

@@ -1,4 +1,4 @@
-export type FeatureId = 'skeleton' | 'typography' | 'contrast' | 'grid' | 'inspect' | 'drag';
+export type FeatureId = 'typography' | 'contrast' | 'grid' | 'drag';
 
 export interface TypographyScaleEntry {
   level: string;
@@ -39,24 +39,6 @@ export interface GridReport {
   marginLeft: number;
   marginRight: number;
   baselineHeight: number | null;
-}
-
-export interface InspectInfo {
-  tag: string;
-  id: string;
-  classes: string[];
-  width: number;
-  height: number;
-  margin: { top: number; right: number; bottom: number; left: number };
-  padding: { top: number; right: number; bottom: number; left: number };
-  fontSize: string;
-  fontFamily: string;
-  fontWeight: string;
-  lineHeight: string;
-  color: string;
-  backgroundColor: string;
-  display: string;
-  position: string;
 }
 
 export interface GridSettings {

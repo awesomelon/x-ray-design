@@ -4,13 +4,10 @@
 
 ## Features
 
-### Inspect
-마우스를 올리면 해당 요소의 box model(margin/padding/content)이 시각화되고, Side Panel에 font, color, spacing 등 CSS 속성이 실시간으로 표시됩니다.
-
-### Skeleton View
-페이지의 배경, 이미지, 그림자를 모두 제거하고 여백 구조만 남깁니다.
-- 이미지/비디오 → 회색 빗금 placeholder로 치환
-- Margin(주황) / Padding(초록) 오버레이 + px 레이블
+### Element Drag
+페이지의 요소를 드래그하여 자유롭게 배치할 수 있습니다.
+- 마우스로 요소를 잡아 원하는 위치로 이동
+- `Esc` 키로 모든 변경사항 리셋
 
 ### Grid Overlay
 페이지 위에 컬럼 그리드와 베이스라인 격자를 덧씌웁니다.
@@ -68,11 +65,10 @@ src/
 ├── background/          # Service Worker (메시지 릴레이)
 ├── content/
 │   ├── modules/         # 기능별 독립 모듈
-│   │   ├── hover-inspect.ts
-│   │   ├── skeleton-view.ts
 │   │   ├── grid-overlay.ts
 │   │   ├── typography-extractor.ts
-│   │   └── contrast-analyzer.ts
+│   │   ├── contrast-analyzer.ts
+│   │   └── element-drag.ts
 │   ├── overlay-host.ts  # Shadow DOM 격리 오버레이
 │   └── index.ts         # Content Script 진입점
 ├── sidepanel/           # Side Panel UI (Preact)

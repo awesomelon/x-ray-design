@@ -1,20 +1,16 @@
 import { isMessage, type Message } from '../shared/messages';
 import type { FeatureId } from '../shared/types';
-import { activateSkeleton, deactivateSkeleton } from './modules/skeleton-view';
 import { activateTypography, deactivateTypography } from './modules/typography-extractor';
 import { activateContrast, deactivateContrast } from './modules/contrast-analyzer';
 import { activateGrid, deactivateGrid, applyGridSettings } from './modules/grid-overlay';
-import { activateInspect, deactivateInspect } from './modules/hover-inspect';
 import { activateDrag, deactivateDrag } from './modules/element-drag';
 
 const activeFeatures = new Set<FeatureId>();
 
 const featureMap: Record<FeatureId, { activate: () => void; deactivate: () => void }> = {
-  skeleton: { activate: activateSkeleton, deactivate: deactivateSkeleton },
   typography: { activate: activateTypography, deactivate: deactivateTypography },
   contrast: { activate: activateContrast, deactivate: deactivateContrast },
   grid: { activate: activateGrid, deactivate: deactivateGrid },
-  inspect: { activate: activateInspect, deactivate: deactivateInspect },
   drag: { activate: activateDrag, deactivate: deactivateDrag },
 };
 

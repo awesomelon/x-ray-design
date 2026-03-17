@@ -36,7 +36,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   if (message.type === 'TOGGLE_FEATURE' || message.type === 'UPDATE_GRID_SETTINGS' || message.type === 'SET_GRID_VISIBLE') {
     sendToActiveTab(message);
-  } else {
+  }
+
+  if (message.type === 'CONTENT_READY' || message.type === 'FEATURE_STATE_CHANGED' || message.type === 'GRID_REPORT') {
     chrome.runtime.sendMessage(message).catch(() => {});
   }
 

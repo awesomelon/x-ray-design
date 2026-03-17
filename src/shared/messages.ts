@@ -5,7 +5,8 @@ export type Message =
   | { type: 'FEATURE_STATE_CHANGED'; feature: FeatureId; enabled: boolean }
   | { type: 'GRID_REPORT'; data: GridReport }
   | { type: 'UPDATE_GRID_SETTINGS'; data: GridSettings }
-  | { type: 'SET_GRID_VISIBLE'; visible: boolean };
+  | { type: 'SET_GRID_VISIBLE'; visible: boolean }
+  | { type: 'CONTENT_READY' };
 
 export function isMessage(value: unknown): value is Message {
   return (

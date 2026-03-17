@@ -8,6 +8,8 @@ const featureMap: Record<FeatureId, { activate: () => void; deactivate: () => vo
   drag: { activate: activateDrag, deactivate: deactivateDrag },
 };
 
+chrome.runtime.sendMessage({ type: 'CONTENT_READY' }).catch(() => {});
+
 chrome.runtime.onMessage.addListener((message: unknown) => {
   if (!isMessage(message)) return;
 

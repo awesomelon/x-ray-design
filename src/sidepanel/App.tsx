@@ -16,6 +16,11 @@ export function App() {
     const handler = (message: unknown) => {
       if (!isMessage(message)) return;
       switch (message.type) {
+        case 'CONTENT_READY':
+          setDragEnabled(false);
+          setGridReport(null);
+          setGridVisible(true);
+          break;
         case 'FEATURE_STATE_CHANGED':
           if (message.feature === 'drag') {
             setDragEnabled(message.enabled);

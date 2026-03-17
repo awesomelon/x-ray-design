@@ -1,35 +1,4 @@
-export type FeatureId = 'typography' | 'contrast' | 'grid' | 'drag';
-
-export interface TypographyScaleEntry {
-  level: string;
-  expected: number;
-  actual: number;
-  deviation: number; // percentage
-}
-
-export interface TypographyReport {
-  baseFontSize: number;       // f_0
-  ratio: number;              // r
-  ratioName: string | null;   // e.g. "Major Third"
-  scale: TypographyScaleEntry[];
-  sizeFrequency: Record<number, number>; // fontSize -> count
-}
-
-export interface ContrastResult {
-  selector: string;
-  text: string;
-  foreground: string;
-  background: string;
-  ratio: number;
-  passes: boolean;
-  rect: { top: number; left: number; width: number; height: number };
-}
-
-export interface ContrastReport {
-  results: ContrastResult[];
-  passCount: number;
-  failCount: number;
-}
+export type FeatureId = 'drag';
 
 export interface GridReport {
   containerMaxWidth: number | null;

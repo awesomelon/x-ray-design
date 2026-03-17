@@ -16,15 +16,13 @@ function toSettings(report: GridReport): GridSettings {
   };
 }
 
-export function GridReportView({ report }: Readonly<Props>) {
+export function DragGridConfig({ report }: Readonly<Props>) {
   const [settings, setSettings] = useState<GridSettings>(toSettings(report));
 
-  // 자동 감지 결과가 들어오면 동기화
   useEffect(() => {
     setSettings(toSettings(report));
   }, [report]);
 
-  // 입력 디바운스: 150ms 뒤 메시지 전송
   const sendTimer = useRef<ReturnType<typeof setTimeout>>();
   const update = (patch: Partial<GridSettings>) => {
     const next = { ...settings, ...patch };
@@ -35,11 +33,18 @@ export function GridReportView({ report }: Readonly<Props>) {
     }, 150);
   };
 
+  const contentWidth = settings.containerMaxWidth
+    ?? (window.innerWidth - settings.marginLeft - settings.marginRight);
+  const totalGutters = (settings.columns - 1) * settings.gutterWidth;
+  const columnWidth = settings.columns > 0
+    ? Math.round((contentWidth - totalGutters) / settings.columns)
+    : 0;
+
   const numField = (
     label: string,
     value: number | null,
     onChange: (v: number) => void,
-    opts?: { min?: number; max?: number; step?: number; nullable?: boolean }
+    opts?: { min?: number; max?: number; step?: number },
   ) => (
     <div class="grid-field">
       <label class="grid-field__label">{label}</label>
@@ -58,14 +63,6 @@ export function GridReportView({ report }: Readonly<Props>) {
     </div>
   );
 
-  // columnWidth는 다른 값에서 자동 계산
-  const contentWidth = settings.containerMaxWidth
-    ?? (window.innerWidth - settings.marginLeft - settings.marginRight);
-  const totalGutters = (settings.columns - 1) * settings.gutterWidth;
-  const columnWidth = settings.columns > 0
-    ? Math.round((contentWidth - totalGutters) / settings.columns)
-    : 0;
-
   return (
     <div class="report">
       <div class="grid-fields">
@@ -82,7 +79,6 @@ export function GridReportView({ report }: Readonly<Props>) {
         <span class="grid-computed__value">{columnWidth}px</span>
       </div>
 
-      {/* 미니 프리뷰 */}
       <div class="grid-preview">
         <div class="grid-preview__inner" style={{ gap: `${Math.max(1, settings.gutterWidth / 8)}px` }}>
           {Array.from({ length: Math.min(settings.columns, 24) }, (_, i) => (

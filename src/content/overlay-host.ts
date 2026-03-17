@@ -3,7 +3,6 @@ const HOST_TAG = 'x-ray-overlay';
 let hostElement: HTMLElement | null = null;
 let shadowRoot: ShadowRoot | null = null;
 
-// querySelector 대신 Map 캐시로 O(1) 레이어 조회
 const layerCache = new Map<string, HTMLDivElement>();
 
 export function getOverlayRoot(): ShadowRoot {
@@ -18,18 +17,21 @@ export function getOverlayRoot(): ShadowRoot {
   const style = document.createElement('style');
   style.textContent = `
     :host { all: initial; }
-    .xray-badge {
+    .xray-drag-highlight {
       position: fixed;
-      font: bold 10px/1 monospace;
-      padding: 2px 4px;
-      border-radius: 3px;
-      color: #fff;
+      border: 2px dashed #8b5cf6;
+      background: rgba(139, 92, 246, 0.06);
       pointer-events: none;
-      z-index: 2147483647;
-      white-space: nowrap;
+      border-radius: 2px;
     }
-    .xray-badge--pass { background: #22c55e; }
-    .xray-badge--fail { background: #ef4444; }
+    .xray-drag-selected {
+      position: fixed;
+      border: 2px solid #8b5cf6;
+      background: rgba(139, 92, 246, 0.10);
+      pointer-events: none;
+      border-radius: 2px;
+      box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.3);
+    }
     .xray-grid-container {
       position: fixed;
       top: 0;
@@ -52,13 +54,6 @@ export function getOverlayRoot(): ShadowRoot {
       background: rgba(59, 130, 246, 0.08);
       border-left: 1px solid rgba(59, 130, 246, 0.18);
       border-right: 1px solid rgba(59, 130, 246, 0.18);
-    }
-    .xray-drag-highlight {
-      position: fixed;
-      border: 2px dashed #8b5cf6;
-      background: rgba(139, 92, 246, 0.06);
-      pointer-events: none;
-      border-radius: 2px;
     }
     .xray-grid-baseline {
       position: fixed;

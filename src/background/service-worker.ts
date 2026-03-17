@@ -1,6 +1,5 @@
 import { isMessage } from '../shared/messages';
 
-// 활성 탭 ID 캐시 — 탭 변경 시에만 갱신
 let cachedTabId: number | undefined;
 
 chrome.tabs.onActivated.addListener((info) => {
@@ -35,7 +34,7 @@ chrome.action.onClicked.addListener((tab) => {
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (!isMessage(message)) return;
 
-  if (message.type === 'TOGGLE_FEATURE' || message.type === 'REQUEST_REPORT' || message.type === 'UPDATE_GRID_SETTINGS') {
+  if (message.type === 'TOGGLE_FEATURE' || message.type === 'UPDATE_GRID_SETTINGS') {
     sendToActiveTab(message);
   } else {
     chrome.runtime.sendMessage(message).catch(() => {});

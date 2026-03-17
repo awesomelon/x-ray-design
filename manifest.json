@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "X-Ray Design",
-  "version": "0.1.0",
-  "description": "웹페이지의 디자인 골격을 시각화합니다",
+  "name": "Snap",
+  "version": "0.2.0",
+  "description": "웹페이지 요소를 드래그하여 레이아웃을 탐색합니다",
   "permissions": ["activeTab", "sidePanel"],
   "side_panel": {
     "default_path": "src/sidepanel/index.html"
@@ -19,7 +19,7 @@
     }
   ],
   "action": {
-    "default_title": "X-Ray Design"
+    "default_title": "Snap"
   },
   "icons": {
     "16": "src/assets/icon-16.png",

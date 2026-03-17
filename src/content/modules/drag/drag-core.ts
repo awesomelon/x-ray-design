@@ -1,5 +1,6 @@
 import { getFeatureLayer } from '../../overlay-host';
 import { snapToGrid } from './snap-engine';
+import { renderSnapGuides, clearSnapGuides } from './snap-guides';
 import { setSelected, clearSelectionHighlight } from './selection-state';
 import type { GridReport } from '@shared/types';
 
@@ -137,8 +138,12 @@ export function promoteToFixed(el: HTMLElement): void {
 
 function applySnap(rawLeft: number, rawTop: number, w: number, h: number): { left: number; top: number } {
   const grid = getGridReport();
-  if (!grid) return { left: rawLeft, top: rawTop };
+  if (!grid) {
+    renderSnapGuides(null, null);
+    return { left: rawLeft, top: rawTop };
+  }
   const snapped = snapToGrid(rawLeft, rawTop, w, h, grid);
+  renderSnapGuides(snapped.guideX, snapped.guideY);
   return { left: snapped.left, top: snapped.top };
 }
 
@@ -182,6 +187,7 @@ function finishDrag(): void {
   document.body.style.cursor = 'grab';
   document.body.style.userSelect = '';
   clearHighlight();
+  clearSnapGuides();
   hoveredEl = null;
   setSelected(el);
 }
@@ -286,6 +292,7 @@ function onKeyDown(e: KeyboardEvent): void {
       document.body.style.cursor = 'grab';
       document.body.style.userSelect = '';
       clearHighlight();
+      clearSnapGuides();
       hoveredEl = null;
       setSelected(null);
     } else {
@@ -333,6 +340,7 @@ export function teardownDragCore(): void {
   pendingDrag = null;
   hoveredEl = null;
   clearHighlight();
+  clearSnapGuides();
   document.removeEventListener('mousedown', onMouseDown, true);
   document.removeEventListener('mousemove', onMouseMove, true);
   document.removeEventListener('mouseup', onMouseUp, true);

@@ -9,6 +9,7 @@ const MemoToggle = memo(FeatureToggle);
 
 export function App() {
   const [dragEnabled, setDragEnabled] = useState(false);
+  const [gridVisible, setGridVisible] = useState(true);
   const [gridReport, setGridReport] = useState<GridReport | null>(null);
 
   useEffect(() => {
@@ -40,15 +41,26 @@ export function App() {
           enabled,
         });
       });
-      if (!enabled) setGridReport(null);
+      if (!enabled) {
+        setGridReport(null);
+        setGridVisible(true);
+      }
       return enabled;
+    });
+  }, []);
+
+  const toggleGrid = useCallback(() => {
+    setGridVisible((prev) => {
+      const visible = !prev;
+      chrome.runtime.sendMessage({ type: 'SET_GRID_VISIBLE', visible });
+      return visible;
     });
   }, []);
 
   return (
     <div class="panel">
       <header class="panel-header">
-        <h1>X-Ray Design</h1>
+        <h1>Snap</h1>
       </header>
 
       <section class="panel-section">
@@ -58,7 +70,21 @@ export function App() {
           active={dragEnabled}
           onToggle={toggle}
         />
-        {dragEnabled && gridReport && <DragGridConfig report={gridReport} />}
+        {dragEnabled && (
+          <>
+            <div class="grid-toggle">
+              <label class="grid-toggle__label">
+                <input
+                  type="checkbox"
+                  checked={gridVisible}
+                  onChange={toggleGrid}
+                />
+                Grid Overlay
+              </label>
+            </div>
+            {gridReport && <DragGridConfig report={gridReport} />}
+          </>
+        )}
       </section>
     </div>
   );

@@ -70,6 +70,31 @@ export function getOverlayRoot(): ShadowRoot {
         transparent 1px
       );
     }
+    .xray-snap-guide-v {
+      position: fixed;
+      top: 0;
+      width: 1px;
+      height: 100vh;
+      background: #ec4899;
+      pointer-events: none;
+      box-shadow: 0 0 6px 1px rgba(236, 72, 153, 0.6);
+    }
+    .xray-snap-guide-h {
+      position: fixed;
+      left: 0;
+      width: 100vw;
+      height: 1px;
+      background: #ec4899;
+      pointer-events: none;
+      box-shadow: 0 0 6px 1px rgba(236, 72, 153, 0.6);
+    }
+    @keyframes xray-snap-flash {
+      0% { box-shadow: 0 0 12px 3px rgba(236, 72, 153, 0.9); }
+      100% { box-shadow: 0 0 6px 1px rgba(236, 72, 153, 0.6); }
+    }
+    .xray-snap-flash {
+      animation: xray-snap-flash 0.2s ease-out;
+    }
   `;
   shadowRoot.appendChild(style);
 

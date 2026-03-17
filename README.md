@@ -1,28 +1,18 @@
-# X-Ray Design
+# Snap
 
-웹페이지의 화려한 표면을 벗겨내고 **디자인의 뼈대**만 보여주는 Chrome 확장 프로그램.
+웹페이지의 요소를 자유롭게 드래그하여 레이아웃을 탐색하는 Chrome 확장 프로그램.
 
 ## Features
 
-### Element Drag
-페이지의 요소를 드래그하여 자유롭게 배치할 수 있습니다.
-- 마우스로 요소를 잡아 원하는 위치로 이동
+### Element Drag + Grid Snap
+페이지의 요소를 드래그하면 자동 감지된 그리드에 마그네틱처럼 붙습니다.
+
+- **마우스 드래그**: 요소를 잡아 이동 — 컬럼 경계와 베이스라인에 자동 스냅
+- **클릭 선택 + 방향키**: 요소를 클릭한 뒤 방향키로 1px씩 미세 조정 (`Shift` + 방향키로 10px)
+- **스냅 가이드 라인**: 스냅 시 분홍색 가이드 라인이 나타나 정렬 위치를 표시
+- **그리드 오버레이**: 페이지의 컬럼 그리드 + 베이스라인 격자를 자동 감지하여 표시
+- **수동 오버라이드**: Side Panel에서 columns, gutter, margin, baseline 등 직접 조절
 - `Esc` 키로 모든 변경사항 리셋
-
-### Grid Overlay
-페이지 위에 컬럼 그리드와 베이스라인 격자를 덧씌웁니다.
-- CSS Grid / Flexbox / max-width 컨테이너를 자동 감지
-- Side Panel에서 columns, gutter, baseline 등 직접 조절 가능
-
-### Typography Scale
-페이지에 사용된 모든 폰트 크기를 수집하고, 기하급수 공식 `f(n) = f₀ × rⁿ`의 변수를 역산합니다.
-- 기준 폰트(f₀), 비율(r), 명명된 비율(Major Third, Golden Ratio 등) 표시
-- 크기별 사용 빈도 히스토그램
-
-### Contrast Ratio
-모든 텍스트의 전경색/배경색 명도비를 WCAG 2.x 기준(4.5:1)으로 검증합니다.
-- 통과(초록) / 실패(빨간) 배지가 페이지 위에 표시
-- Side Panel에 실패 항목 목록 + 색상 스워치
 
 ## Tech Stack
 
@@ -62,19 +52,22 @@ npm test
 
 ```
 src/
-├── background/          # Service Worker (메시지 릴레이)
+├── background/              # Service Worker (메시지 릴레이)
 ├── content/
-│   ├── modules/         # 기능별 독립 모듈
-│   │   ├── grid-overlay.ts
-│   │   ├── typography-extractor.ts
-│   │   ├── contrast-analyzer.ts
-│   │   └── element-drag.ts
-│   ├── overlay-host.ts  # Shadow DOM 격리 오버레이
-│   └── index.ts         # Content Script 진입점
-├── sidepanel/           # Side Panel UI (Preact)
+│   ├── modules/
+│   │   ├── element-drag.ts  # 오케스트레이터 (Grid + Drag + Selection 통합)
+│   │   └── drag/
+│   │       ├── drag-core.ts       # 마우스 드래그 메커니즘
+│   │       ├── grid-renderer.ts   # 컬럼 그리드 자동 감지 + 렌더링
+│   │       ├── snap-engine.ts     # 컬럼/베이스라인 스냅 계산
+│   │       ├── snap-guides.ts     # 스냅 가이드 라인 표시
+│   │       └── selection-state.ts # 클릭 선택 + 방향키 이동
+│   ├── overlay-host.ts      # Shadow DOM 격리 오버레이
+│   └── index.ts             # Content Script 진입점
+├── sidepanel/               # Side Panel UI (Preact)
 │   ├── components/
 │   └── styles/
-└── shared/              # 공유 타입, 메시지, 유틸
+└── shared/                  # 공유 타입, 메시지
 ```
 
 ## License

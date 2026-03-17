@@ -4,6 +4,7 @@ import type { GridReport, GridSettings } from '@shared/types';
 const LAYER_ID = 'drag-grid';
 
 let lastReport: GridReport | null = null;
+let layerRef: HTMLDivElement | null = null;
 
 // --- Auto-detection ---
 
@@ -117,6 +118,7 @@ function analyze(): GridReport {
 
 function renderGrid(report: GridReport): void {
   const layer = getFeatureLayer(LAYER_ID);
+  layerRef = layer;
   layer.replaceChildren();
 
   const container = document.createElement('div');
@@ -160,6 +162,7 @@ export function mountGrid(): GridReport {
 export function unmountGrid(): void {
   window.removeEventListener('resize', onResize);
   removeFeatureLayer(LAYER_ID);
+  layerRef = null;
   lastReport = null;
 }
 
@@ -181,6 +184,10 @@ export function applySettings(settings: GridSettings): GridReport {
   };
   renderGrid(lastReport);
   return lastReport;
+}
+
+export function setGridVisible(visible: boolean): void {
+  if (layerRef) layerRef.style.display = visible ? '' : 'none';
 }
 
 export function getLastReport(): GridReport | null {

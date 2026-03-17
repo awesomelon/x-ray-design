@@ -34,7 +34,7 @@ chrome.action.onClicked.addListener((tab) => {
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (!isMessage(message)) return;
 
-  if (message.type === 'TOGGLE_FEATURE' || message.type === 'UPDATE_GRID_SETTINGS') {
+  if (message.type === 'TOGGLE_FEATURE' || message.type === 'UPDATE_GRID_SETTINGS' || message.type === 'SET_GRID_VISIBLE') {
     sendToActiveTab(message);
   } else {
     chrome.runtime.sendMessage(message).catch(() => {});

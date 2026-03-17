@@ -29,3 +29,5 @@ export function applyGridSettings(settings: GridSettings): void {
   const report = applySettings(settings);
   sendGridReport(report);
 }
+
+export { setGridVisible } from './drag/grid-renderer';

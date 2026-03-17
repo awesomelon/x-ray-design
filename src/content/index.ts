@@ -1,6 +1,6 @@
 import { isMessage } from '../shared/messages';
 import type { FeatureId } from '../shared/types';
-import { activateDrag, deactivateDrag, applyGridSettings } from './modules/element-drag';
+import { activateDrag, deactivateDrag, applyGridSettings, setGridVisible } from './modules/element-drag';
 
 const activeFeatures = new Set<FeatureId>();
 
@@ -32,6 +32,11 @@ chrome.runtime.onMessage.addListener((message: unknown) => {
 
     case 'UPDATE_GRID_SETTINGS': {
       applyGridSettings(message.data);
+      break;
+    }
+
+    case 'SET_GRID_VISIBLE': {
+      setGridVisible(message.visible);
       break;
     }
   }

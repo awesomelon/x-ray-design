@@ -1,17 +1,16 @@
 import type { GridReport } from '@shared/types';
 
-const SNAP_THRESHOLD = 5;
+const SNAP_THRESHOLD = 8;
 
 export interface SnapResult {
   left: number;
   top: number;
   snappedX: boolean;
   snappedY: boolean;
+  guideX: number | null;
+  guideY: number | null;
 }
 
-/**
- * GridReport에서 컬럼의 좌우 경계 x 좌표를 계산한다.
- */
 function computeColumnEdges(grid: GridReport): number[] {
   const edges: number[] = [];
   for (let i = 0; i < grid.columns; i++) {
@@ -22,9 +21,6 @@ function computeColumnEdges(grid: GridReport): number[] {
   return edges;
 }
 
-/**
- * 주어진 값에서 가장 가까운 라인을 찾는다.
- */
 function findNearest(value: number, lines: number[]): { nearest: number; dist: number } {
   let nearest = lines[0];
   let minDist = Math.abs(value - nearest);
@@ -38,55 +34,46 @@ function findNearest(value: number, lines: number[]): { nearest: number; dist: n
   return { nearest, dist: minDist };
 }
 
-/**
- * 두 변(edgeA, edgeB) 중 라인 배열에 더 가까운 변을 스냅한다.
- */
 function snapAxisToLines(
   edgeA: number,
   edgeB: number,
   lines: number[],
   threshold: number,
-): { value: number; snapped: boolean; fromA: boolean } {
-  if (lines.length === 0) return { value: edgeA, snapped: false, fromA: true };
+): { value: number; snapped: boolean; fromA: boolean; guideLine: number | null } {
+  if (lines.length === 0) return { value: edgeA, snapped: false, fromA: true, guideLine: null };
 
   const snapA = findNearest(edgeA, lines);
   const snapB = findNearest(edgeB, lines);
 
   if (snapA.dist <= threshold && snapA.dist <= snapB.dist) {
-    return { value: snapA.nearest, snapped: true, fromA: true };
+    return { value: snapA.nearest, snapped: true, fromA: true, guideLine: snapA.nearest };
   }
   if (snapB.dist <= threshold) {
-    return { value: snapB.nearest, snapped: true, fromA: false };
+    return { value: snapB.nearest, snapped: true, fromA: false, guideLine: snapB.nearest };
   }
-  return { value: edgeA, snapped: false, fromA: true };
+  return { value: edgeA, snapped: false, fromA: true, guideLine: null };
 }
 
-/**
- * 두 변 중 베이스라인에 더 가까운 변을 스냅한다.
- */
 function snapAxisToBaseline(
   edgeA: number,
   edgeB: number,
   baselineHeight: number,
   threshold: number,
-): { value: number; snapped: boolean; fromA: boolean } {
+): { value: number; snapped: boolean; fromA: boolean; guideLine: number | null } {
   const nearestA = Math.round(edgeA / baselineHeight) * baselineHeight;
   const nearestB = Math.round(edgeB / baselineHeight) * baselineHeight;
   const distA = Math.abs(edgeA - nearestA);
   const distB = Math.abs(edgeB - nearestB);
 
   if (distA <= threshold && distA <= distB) {
-    return { value: nearestA, snapped: true, fromA: true };
+    return { value: nearestA, snapped: true, fromA: true, guideLine: nearestA };
   }
   if (distB <= threshold) {
-    return { value: nearestB, snapped: true, fromA: false };
+    return { value: nearestB, snapped: true, fromA: false, guideLine: nearestB };
   }
-  return { value: edgeA, snapped: false, fromA: true };
+  return { value: edgeA, snapped: false, fromA: true, guideLine: null };
 }
 
-/**
- * X축은 컬럼 경계에, Y축은 베이스라인에 스냅한다.
- */
 export function snapToGrid(
   left: number,
   top: number,
@@ -97,11 +84,11 @@ export function snapToGrid(
   const xLines = computeColumnEdges(grid);
   const xSnap = snapAxisToLines(left, left + width, xLines, SNAP_THRESHOLD);
 
-  let ySnap: { value: number; snapped: boolean; fromA: boolean };
+  let ySnap: { value: number; snapped: boolean; fromA: boolean; guideLine: number | null };
   if (grid.baselineHeight && grid.baselineHeight > 0) {
     ySnap = snapAxisToBaseline(top, top + height, grid.baselineHeight, SNAP_THRESHOLD);
   } else {
-    ySnap = { value: top, snapped: false, fromA: true };
+    ySnap = { value: top, snapped: false, fromA: true, guideLine: null };
   }
 
   return {
@@ -109,5 +96,7 @@ export function snapToGrid(
     top: ySnap.fromA ? ySnap.value : ySnap.value - height,
     snappedX: xSnap.snapped,
     snappedY: ySnap.snapped,
+    guideX: xSnap.guideLine,
+    guideY: ySnap.guideLine,
   };
 }

@@ -104,6 +104,26 @@ body {
   }
 }
 
+/* Grid Toggle */
+.grid-toggle {
+  margin-top: 10px;
+}
+
+.grid-toggle__label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #666;
+  cursor: pointer;
+}
+
+@media (prefers-color-scheme: dark) {
+  .grid-toggle__label {
+    color: #aaa;
+  }
+}
+
 /* Report common */
 .report {
   margin-top: 12px;

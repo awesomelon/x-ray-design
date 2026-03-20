@@ -142,4 +142,59 @@ describe('snapToGrid', () => {
       expect(result.snappedX).toBe(false);
     });
   });
+
+  describe('magnetic snap support fields', () => {
+    it('returns nearestDistX and snapTargetLeft even when not snapped', () => {
+      const grid = makeGrid();
+      // Element at 160, not within snap threshold
+      // Left edge=160, nearest column edge: 195 (right of col 0), dist=35
+      // Right edge=260, nearest: 219 (left of col 1), dist=41
+      // Or right edge nearest: 195 dist=65... let's check
+      // Actually left=160, right=260. Nearest to 160: 195(dist=35) vs 120(dist=40) → 195(35)
+      // Nearest to 260: 219+75=294(dist=34) vs ... closest is probably 294-24=270... let me just test the shape
+      const result = snapToGrid(160, 100, 100, 50, grid);
+      expect(result.snappedX).toBe(false);
+      expect(result.nearestDistX).toBeGreaterThan(0);
+      expect(result.nearestDistX).toBeLessThan(Infinity);
+      expect(result.snapTargetLeft).toBeDefined();
+      expect(typeof result.snapTargetLeft).toBe('number');
+      expect(result.nearestGuideX).not.toBeNull();
+    });
+
+    it('returns nearestDistX = 0 when exactly on a snap line', () => {
+      const grid = makeGrid();
+      // Left edge exactly at column boundary 120
+      const result = snapToGrid(120, 100, 75, 50, grid);
+      expect(result.nearestDistX).toBe(0);
+      expect(result.snapTargetLeft).toBe(120);
+      expect(result.nearestGuideX).toBe(120);
+    });
+
+    it('returns nearestDistY and snapTargetTop with baseline', () => {
+      const grid = makeGrid({ baselineHeight: 24 });
+      // top=50, nearest baseline=48 (2*24), dist=2
+      const result = snapToGrid(120, 50, 100, 50, grid);
+      expect(result.nearestDistY).toBe(2);
+      expect(result.snapTargetTop).toBe(48);
+      expect(result.nearestGuideY).toBe(48);
+    });
+
+    it('returns Infinity nearestDistY when no baseline', () => {
+      const grid = makeGrid({ baselineHeight: null });
+      const result = snapToGrid(120, 50, 100, 50, grid);
+      expect(result.nearestDistY).toBe(Infinity);
+      expect(result.nearestGuideY).toBeNull();
+    });
+
+    it('snapTargetLeft accounts for right-edge snap', () => {
+      const grid = makeGrid();
+      // Element at left=90, width=100. Right edge=190.
+      // Nearest to right edge: 195 (col 0 right), dist=5
+      // Nearest to left edge: 120 (col 0 left), dist=30
+      // Right edge is closer → snapTargetLeft = 195 - 100 = 95
+      const result = snapToGrid(90, 100, 100, 50, grid);
+      expect(result.snapTargetLeft).toBe(95);
+      expect(result.nearestGuideX).toBe(195);
+    });
+  });
 });

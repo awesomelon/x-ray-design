@@ -12,6 +12,11 @@ const IGNORE_TAGS = new Set([
 
 const DRAG_THRESHOLD_SQ = 9; // 3px squared
 
+// Magnetic snap constants
+export const MAGNETIC_ZONE = 20;    // magnetic pull starts here (px)
+export const BREAKAWAY_ZONE = 26;   // must exceed this to escape snap (px)
+export const SNAP_LOCK = 2;         // dead zone — fully locked (px)
+
 // --- Interfaces ---
 
 interface OriginalState {
@@ -31,6 +36,8 @@ interface ActiveDrag {
   el: HTMLElement;
   offsetX: number;
   offsetY: number;
+  cbOffsetX: number;
+  cbOffsetY: number;
 }
 
 // --- State ---
@@ -53,6 +60,8 @@ interface DragState {
   rafId: number;
   lastMouseX: number;
   lastMouseY: number;
+  wasSnappedX: boolean;
+  wasSnappedY: boolean;
   getGridReport: () => GridReport | null;
 }
 
@@ -67,6 +76,8 @@ function createInitialState(): DragState {
     rafId: 0,
     lastMouseX: 0,
     lastMouseY: 0,
+    wasSnappedX: false,
+    wasSnappedY: false,
     getGridReport: () => null,
   };
 }
@@ -161,6 +172,32 @@ export function promoteToFixed(el: HTMLElement): void {
   el.style.boxSizing = 'border-box';
 }
 
+// --- Magnetic snap ---
+
+export function magneticInterpolate(
+  rawPos: number,
+  snapTarget: number,
+  dist: number,
+  wasSnapped: boolean,
+  magneticZone = MAGNETIC_ZONE,
+  breakawayZone = BREAKAWAY_ZONE,
+): { pos: number; isSnapped: boolean } {
+  const zone = Math.max(1, wasSnapped ? breakawayZone : magneticZone);
+
+  if (dist > zone) {
+    return { pos: rawPos, isSnapped: false };
+  }
+
+  if (dist <= SNAP_LOCK) {
+    return { pos: snapTarget, isSnapped: true };
+  }
+
+  // Quadratic easing: stronger pull as distance decreases
+  const t = 1 - (dist / zone) ** 2;
+  const pos = rawPos + (snapTarget - rawPos) * t;
+  return { pos, isSnapped: true };
+}
+
 // --- Snap helper ---
 
 function applySnap(rawLeft: number, rawTop: number, w: number, h: number): { left: number; top: number } {
@@ -169,9 +206,46 @@ function applySnap(rawLeft: number, rawTop: number, w: number, h: number): { lef
     renderSnapGuides(null, null);
     return { left: rawLeft, top: rawTop };
   }
-  const snapped = snapToGrid(rawLeft, rawTop, w, h, grid);
-  renderSnapGuides(snapped.guideX, snapped.guideY);
-  return { left: snapped.left, top: snapped.top };
+
+  // Containing block offset: convert to viewport-relative for accurate snap
+  const cbX = state.dragging?.cbOffsetX ?? 0;
+  const cbY = state.dragging?.cbOffsetY ?? 0;
+  const snapped = snapToGrid(rawLeft + cbX, rawTop + cbY, w, h, grid);
+
+  // Convert snap targets back to containing-block-relative
+  const snapTargetLeft = snapped.snapTargetLeft - cbX;
+  const snapTargetTop = snapped.snapTargetTop - cbY;
+
+  // Adaptive magnetic zone: scale with gutter size
+  const adaptiveZone = Math.min(MAGNETIC_ZONE, Math.max(1, grid.gutterWidth * 0.6));
+  const adaptiveBreakaway = adaptiveZone * (BREAKAWAY_ZONE / MAGNETIC_ZONE);
+
+  let finalLeft = rawLeft;
+  let finalTop = rawTop;
+
+  if (snapped.nearestGuideX !== null) {
+    const xResult = magneticInterpolate(rawLeft, snapTargetLeft, snapped.nearestDistX, state.wasSnappedX, adaptiveZone, adaptiveBreakaway);
+    state.wasSnappedX = xResult.isSnapped;
+    finalLeft = xResult.pos;
+  } else {
+    state.wasSnappedX = false;
+  }
+
+  if (snapped.nearestGuideY !== null) {
+    const yResult = magneticInterpolate(rawTop, snapTargetTop, snapped.nearestDistY, state.wasSnappedY, adaptiveZone, adaptiveBreakaway);
+    state.wasSnappedY = yResult.isSnapped;
+    finalTop = yResult.pos;
+  } else {
+    state.wasSnappedY = false;
+  }
+
+  // Guide lines remain viewport-relative (overlay is position: fixed)
+  renderSnapGuides(
+    state.wasSnappedX ? snapped.nearestGuideX : null,
+    state.wasSnappedY ? snapped.nearestGuideY : null,
+  );
+
+  return { left: finalLeft, top: finalTop };
 }
 
 // --- Drag core ---
@@ -182,6 +256,16 @@ function commitDrag(pending: PendingDrag, e: MouseEvent): void {
   promoteToFixed(el);
 
   const offset = getContainingBlockOffset(el);
+
+  // Set dragging state before applySnap so it can access cbOffset
+  state.dragging = {
+    el,
+    offsetX: offsetX + offset.x,
+    offsetY: offsetY + offset.y,
+    cbOffsetX: offset.x,
+    cbOffsetY: offset.y,
+  };
+
   const rawLeft = e.clientX - offsetX - offset.x;
   const rawTop = e.clientY - offsetY - offset.y;
   const pos = applySnap(rawLeft, rawTop, el.offsetWidth, el.offsetHeight);
@@ -189,7 +273,6 @@ function commitDrag(pending: PendingDrag, e: MouseEvent): void {
   el.style.left = `${pos.left}px`;
   el.style.top = `${pos.top}px`;
 
-  state.dragging = { el, offsetX: offsetX + offset.x, offsetY: offsetY + offset.y };
   clearHighlight();
   clearSelectionHighlight();
   document.body.style.cursor = 'grabbing';
@@ -211,6 +294,8 @@ function finishDrag(): void {
   const el = state.dragging.el;
   state.dragging = null;
   state.pending = null;
+  state.wasSnappedX = false;
+  state.wasSnappedY = false;
   document.body.style.cursor = 'grab';
   document.body.style.userSelect = '';
   clearHighlight();

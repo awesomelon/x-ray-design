@@ -80,6 +80,7 @@ export function getOverlayRoot(): ShadowRoot {
       background: #ec4899;
       pointer-events: none;
       box-shadow: 0 0 6px 1px rgba(236, 72, 153, 0.6);
+      transition: opacity 0.15s ease-out;
     }
     .xray-snap-guide-h {
       position: fixed;
@@ -89,6 +90,7 @@ export function getOverlayRoot(): ShadowRoot {
       background: #ec4899;
       pointer-events: none;
       box-shadow: 0 0 6px 1px rgba(236, 72, 153, 0.6);
+      transition: opacity 0.15s ease-out;
     }
     @keyframes xray-snap-flash {
       0% { box-shadow: 0 0 12px 3px rgba(236, 72, 153, 0.9); }

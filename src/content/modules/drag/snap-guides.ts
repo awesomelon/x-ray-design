@@ -13,10 +13,11 @@ export function renderSnapGuides(snapLineX: number | null, snapLineY: number | n
     if (!guideX || !guideX.isConnected) {
       guideX = document.createElement('div');
       guideX.className = 'xray-snap-guide-v';
+      guideX.style.opacity = '0';
       layer.appendChild(guideX);
     }
     guideX.style.left = `${snapLineX}px`;
-    guideX.style.display = '';
+    guideX.style.opacity = '1';
 
     // 스냅 진입 시 flash 애니메이션
     if (!prevSnapX) {
@@ -26,7 +27,7 @@ export function renderSnapGuides(snapLineX: number | null, snapLineY: number | n
     }
     prevSnapX = true;
   } else {
-    if (guideX) guideX.style.display = 'none';
+    if (guideX) guideX.style.opacity = '0';
     prevSnapX = false;
   }
 
@@ -35,10 +36,11 @@ export function renderSnapGuides(snapLineX: number | null, snapLineY: number | n
     if (!guideY || !guideY.isConnected) {
       guideY = document.createElement('div');
       guideY.className = 'xray-snap-guide-h';
+      guideY.style.opacity = '0';
       layer.appendChild(guideY);
     }
     guideY.style.top = `${snapLineY}px`;
-    guideY.style.display = '';
+    guideY.style.opacity = '1';
 
     if (!prevSnapY) {
       guideY.classList.remove('xray-snap-flash');
@@ -47,7 +49,7 @@ export function renderSnapGuides(snapLineX: number | null, snapLineY: number | n
     }
     prevSnapY = true;
   } else {
-    if (guideY) guideY.style.display = 'none';
+    if (guideY) guideY.style.opacity = '0';
     prevSnapY = false;
   }
 }

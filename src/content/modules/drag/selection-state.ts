@@ -69,8 +69,19 @@ export function replaceSelection(el: HTMLElement | null): void {
   }
 }
 
-export function getSelected(): Set<HTMLElement> {
+export function getSelected(): ReadonlySet<HTMLElement> {
   return selectedSet;
+}
+
+/** Remove disconnected elements from selection and their highlight boxes. */
+export function pruneStale(): void {
+  for (const el of selectedSet) {
+    if (!el.isConnected) {
+      selectedSet.delete(el);
+      const box = highlightBoxes.get(el);
+      if (box) { box.remove(); highlightBoxes.delete(el); }
+    }
+  }
 }
 
 export function clearSelectionHighlight(): void {
@@ -96,7 +107,7 @@ export function unmountKeyboardHandler(): void {
   clearSelectionHighlight();
 }
 
-// Backward-compat alias used by drag-core (finishDrag, onClick)
+// Backward-compat alias used by element-drag.ts (deactivateDrag)
 export function setSelected(el: HTMLElement | null): void {
   replaceSelection(el);
 }

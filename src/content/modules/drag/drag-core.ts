@@ -7,6 +7,7 @@ import {
   toggleSelected,
   clearSelectionHighlight,
   refreshSelectionHighlight,
+  pruneStale,
 } from './selection-state';
 import type { GridReport } from '@shared/types';
 
@@ -294,10 +295,8 @@ function commitDrag(pending: PendingDrag, e: MouseEvent): void {
     replaceSelection(el);
   }
 
-  // Lazy cleanup: remove stale elements from selection
-  for (const sel of selectedSet) {
-    if (!sel.isConnected) selectedSet.delete(sel);
-  }
+  // Lazy cleanup: remove stale elements from selection + highlight boxes
+  pruneStale();
 
   const { offset, width, height } = promoteToFixed(el);
 

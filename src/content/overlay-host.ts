@@ -99,12 +99,6 @@ export function getOverlayRoot(): ShadowRoot {
     .xray-snap-flash {
       animation: xray-snap-flash 0.2s ease-out;
     }
-    .xray-marquee {
-      position: fixed;
-      border: 1px dashed #8b5cf6;
-      background: rgba(139, 92, 246, 0.08);
-      pointer-events: none;
-    }
   `;
   shadowRoot.appendChild(style);
 

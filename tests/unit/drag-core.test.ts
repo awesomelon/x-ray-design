@@ -1,5 +1,20 @@
-import { describe, it, expect } from 'vitest';
-import { shouldIgnore } from '../../src/content/modules/drag/drag-core';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { shouldIgnore, initDragCore, teardownDragCore } from '../../src/content/modules/drag/drag-core';
+
+// Mock overlay-host
+vi.mock('../../src/content/overlay-host', () => {
+  let layerEl: HTMLDivElement | null = null;
+  return {
+    getFeatureLayer: () => {
+      if (!layerEl || !layerEl.isConnected) {
+        layerEl = document.createElement('div');
+        layerEl.id = 'mock-drag-layer';
+        document.body.appendChild(layerEl);
+      }
+      return layerEl;
+    },
+  };
+});
 
 describe('shouldIgnore', () => {
   it('ignores BODY element', () => {
@@ -72,5 +87,73 @@ describe('shouldIgnore', () => {
     } finally {
       container.remove();
     }
+  });
+});
+
+describe('onClick — empty space clears selection', () => {
+  let getSelected: () => ReadonlySet<HTMLElement>;
+  let replaceSelection: (el: HTMLElement | null) => void;
+
+  beforeEach(async () => {
+    document.body.innerHTML = '';
+    const selState = await import('../../src/content/modules/drag/selection-state');
+    getSelected = selState.getSelected;
+    replaceSelection = selState.replaceSelection;
+    initDragCore({ getSnapGrid: () => null });
+  });
+
+  afterEach(() => {
+    teardownDragCore();
+  });
+
+  it('clears selection when clicking on an ignored element (body)', () => {
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    el.getBoundingClientRect = () => ({
+      left: 10, top: 10, width: 100, height: 50,
+      right: 110, bottom: 60, x: 10, y: 10, toJSON: () => ({}),
+    });
+    replaceSelection(el);
+    expect(getSelected().size).toBe(1);
+
+    const click = new MouseEvent('click', { bubbles: true });
+    Object.defineProperty(click, 'target', { value: document.body });
+    document.dispatchEvent(click);
+
+    expect(getSelected().size).toBe(0);
+  });
+
+  it('preserves selection when Ctrl+clicking on an ignored element', () => {
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    el.getBoundingClientRect = () => ({
+      left: 10, top: 10, width: 100, height: 50,
+      right: 110, bottom: 60, x: 10, y: 10, toJSON: () => ({}),
+    });
+    replaceSelection(el);
+    expect(getSelected().size).toBe(1);
+
+    const click = new MouseEvent('click', { bubbles: true, ctrlKey: true });
+    Object.defineProperty(click, 'target', { value: document.body });
+    document.dispatchEvent(click);
+
+    expect(getSelected().size).toBe(1);
+  });
+
+  it('preserves selection when Meta+clicking on an ignored element', () => {
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    el.getBoundingClientRect = () => ({
+      left: 10, top: 10, width: 100, height: 50,
+      right: 110, bottom: 60, x: 10, y: 10, toJSON: () => ({}),
+    });
+    replaceSelection(el);
+    expect(getSelected().size).toBe(1);
+
+    const click = new MouseEvent('click', { bubbles: true, metaKey: true });
+    Object.defineProperty(click, 'target', { value: document.body });
+    document.dispatchEvent(click);
+
+    expect(getSelected().size).toBe(1);
   });
 });

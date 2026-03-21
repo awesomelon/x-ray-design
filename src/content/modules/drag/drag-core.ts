@@ -55,11 +55,6 @@ interface SecondaryDrag {
   dy: number;
 }
 
-interface PendingMarquee {
-  startX: number;
-  startY: number;
-}
-
 // --- State ---
 //
 //  State machine:
@@ -67,10 +62,6 @@ interface PendingMarquee {
 //    IDLE ──mousedown(element)──▶ PENDING ──threshold──▶ DRAGGING ──mouseup──▶ IDLE
 //     │                            │                       │
 //     │                            └──mouseup──▶ IDLE      └──Esc──▶ IDLE (revert)
-//     │
-//     ├──mousedown(empty)──▶ PENDING_MARQUEE ──threshold──▶ MARQUEE ──mouseup──▶ IDLE
-//     │                        │
-//     │                        └──mouseup──▶ IDLE (click on empty = clear selection)
 //     │
 //     └──Esc──▶ IDLE (resetAll)
 //
@@ -89,9 +80,6 @@ interface DragState {
   wasSnappedX: boolean;
   wasSnappedY: boolean;
   getGridReport: () => GridReport | null;
-  pendingMarquee: PendingMarquee | null;
-  marqueeActive: boolean;
-  marqueeBox: HTMLDivElement | null;
 }
 
 function createInitialState(): DragState {
@@ -109,9 +97,6 @@ function createInitialState(): DragState {
     wasSnappedX: false,
     wasSnappedY: false,
     getGridReport: () => null,
-    pendingMarquee: null,
-    marqueeActive: false,
-    marqueeBox: null,
   };
 }
 
@@ -376,86 +361,15 @@ function finishDrag(): void {
   }
 }
 
-// --- Marquee ---
-
-function commitMarquee(pending: PendingMarquee, e: MouseEvent): void {
-  state.marqueeActive = true;
-  const layer = getFeatureLayer('drag');
-  if (!state.marqueeBox || !state.marqueeBox.isConnected) {
-    state.marqueeBox = document.createElement('div');
-    state.marqueeBox.className = 'xray-marquee';
-    layer.appendChild(state.marqueeBox);
-  }
-  updateMarqueeBox(pending.startX, pending.startY, e.clientX, e.clientY);
-  document.body.style.cursor = 'crosshair';
-  document.body.style.userSelect = 'none';
-}
-
-function updateMarqueeBox(x1: number, y1: number, x2: number, y2: number): void {
-  if (!state.marqueeBox) return;
-  const left = Math.min(x1, x2);
-  const top = Math.min(y1, y2);
-  const width = Math.abs(x2 - x1);
-  const height = Math.abs(y2 - y1);
-  state.marqueeBox.style.cssText =
-    `left:${left}px;top:${top}px;width:${width}px;height:${height}px;`;
-}
-
-function finishMarquee(e: MouseEvent, addToSelection: boolean): void {
-  if (!state.pendingMarquee) return;
-  const { startX, startY } = state.pendingMarquee;
-  const endX = e.clientX;
-  const endY = e.clientY;
-
-  const left = Math.min(startX, endX);
-  const top = Math.min(startY, endY);
-  const right = Math.max(startX, endX);
-  const bottom = Math.max(startY, endY);
-
-  if (state.marqueeBox) {
-    state.marqueeBox.remove();
-    state.marqueeBox = null;
-  }
-  state.marqueeActive = false;
-  state.pendingMarquee = null;
-  document.body.style.cursor = 'grab';
-  document.body.style.userSelect = '';
-
-  // Too small = click on empty → clear selection
-  if (Math.abs(endX - startX) < 3 && Math.abs(endY - startY) < 3) {
-    if (!addToSelection) replaceSelection(null);
-    return;
-  }
-
-  if (!addToSelection) replaceSelection(null);
-
-  const candidates = document.body.querySelectorAll('*');
-  for (const candidate of candidates) {
-    if (shouldIgnore(candidate)) continue;
-    const el = candidate as HTMLElement;
-    const rect = el.getBoundingClientRect();
-    if (rect.width === 0 && rect.height === 0) continue;
-
-    if (rect.left < right && rect.right > left && rect.top < bottom && rect.bottom > top) {
-      // Skip container elements that fully enclose the marquee
-      if (rect.left <= left && rect.right >= right && rect.top <= top && rect.bottom >= bottom) {
-        continue;
-      }
-      toggleSelected(el);
-    }
-  }
-}
-
 // --- Event handlers ---
 
 function onMouseDown(e: MouseEvent): void {
-  if (!state.active || state.dragging || state.marqueeActive) return;
+  if (!state.active || state.dragging) return;
   const el = e.target as HTMLElement;
 
   if (shouldIgnore(el)) {
     e.preventDefault();
     e.stopPropagation();
-    state.pendingMarquee = { startX: e.clientX, startY: e.clientY };
     return;
   }
 
@@ -500,20 +414,6 @@ function onMouseMove(e: MouseEvent): void {
     return;
   }
 
-  if (state.marqueeActive && state.pendingMarquee) {
-    updateMarqueeBox(state.pendingMarquee.startX, state.pendingMarquee.startY, e.clientX, e.clientY);
-    return;
-  }
-
-  if (state.pendingMarquee) {
-    const dx = e.clientX - state.pendingMarquee.startX;
-    const dy = e.clientY - state.pendingMarquee.startY;
-    if (dx * dx + dy * dy > DRAG_THRESHOLD_SQ) {
-      commitMarquee(state.pendingMarquee, e);
-    }
-    return;
-  }
-
   if (state.pending) {
     const dx = e.clientX - state.pending.startX;
     const dy = e.clientY - state.pending.startY;
@@ -530,15 +430,11 @@ function onMouseMove(e: MouseEvent): void {
   renderHighlight(el);
 }
 
-function onMouseUp(e: MouseEvent): void {
+function onMouseUp(): void {
   if (state.dragging) {
     finishDrag();
-  } else if (state.marqueeActive || state.pendingMarquee) {
-    const addToSelection = e.ctrlKey || e.metaKey;
-    finishMarquee(e, addToSelection);
   }
   state.pending = null;
-  state.pendingMarquee = null;
 }
 
 function onClick(e: MouseEvent): void {
@@ -546,13 +442,17 @@ function onClick(e: MouseEvent): void {
   e.preventDefault();
   e.stopPropagation();
 
-  if (!state.dragging && !state.marqueeActive) {
+  if (!state.dragging) {
     const el = e.target as HTMLElement;
     if (!shouldIgnore(el)) {
       if (e.ctrlKey || e.metaKey) {
         toggleSelected(el);
       } else {
         replaceSelection(el);
+      }
+    } else {
+      if (!(e.ctrlKey || e.metaKey)) {
+        replaceSelection(null);
       }
     }
   }
@@ -566,16 +466,7 @@ function onDragStart(e: DragEvent): void {
 function onKeyDown(e: KeyboardEvent): void {
   if (!state.active) return;
   if (e.key === 'Escape') {
-    if (state.marqueeActive || state.pendingMarquee) {
-      if (state.marqueeBox) {
-        state.marqueeBox.remove();
-        state.marqueeBox = null;
-      }
-      state.marqueeActive = false;
-      state.pendingMarquee = null;
-      document.body.style.cursor = 'grab';
-      document.body.style.userSelect = '';
-    } else if (state.dragging) {
+    if (state.dragging) {
       const el = state.dragging.el;
       const orig = state.movedElements.get(el);
       if (orig) {
@@ -612,7 +503,7 @@ function onKeyDown(e: KeyboardEvent): void {
 }
 
 function onScroll(): void {
-  if (!state.active || state.dragging || state.pending || state.marqueeActive) return;
+  if (!state.active || state.dragging || state.pending) return;
   state.hoveredEl = null;
   clearHighlight();
 }
@@ -621,9 +512,7 @@ function onWindowMouseLeave(e: MouseEvent): void {
   if (!state.active) return;
   if (e.relatedTarget !== null) return;
   if (state.dragging) finishDrag();
-  if (state.marqueeActive && state.pendingMarquee) finishMarquee(e, false);
   state.pending = null;
-  state.pendingMarquee = null;
 }
 
 // --- Public API ---
@@ -646,7 +535,6 @@ export function teardownDragCore(): void {
   cancelAnimationFrame(state.rafId);
   clearHighlight();
   clearSnapGuides();
-  if (state.marqueeBox) state.marqueeBox.remove();
   document.removeEventListener('mousedown', onMouseDown, true);
   document.removeEventListener('mousemove', onMouseMove, true);
   document.removeEventListener('mouseup', onMouseUp, true);

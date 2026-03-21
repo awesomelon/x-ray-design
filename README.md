@@ -1,5 +1,7 @@
 # Snap
 
+[English](./README.en.md)
+
 웹페이지의 요소를 자유롭게 드래그하여 레이아웃을 탐색하는 Chrome 확장 프로그램.
 
 ## Features
@@ -14,6 +16,13 @@
 - **수동 오버라이드**: Side Panel에서 columns, gutter, margin, baseline 등 직접 조절
 - `Esc` 키로 모든 변경사항 리셋
 
+### Performance
+
+- **Layout thrashing 방지**: 드래그 중 요소 크기를 캐시하여 매 프레임 레이아웃 재계산 제거
+- **스냅 계산 캐시**: 그리드 컬럼 엣지를 캐시하여 동일 그리드에서 반복 계산 방지
+- **2단계 컨테이너 감지**: `body > *`를 먼저 검색하고 필요시에만 하위 레벨로 확장
+- **rAF 배칭**: requestAnimationFrame으로 드래그 업데이트를 배치 처리
+
 ## Tech Stack
 
 | | |
@@ -22,7 +31,7 @@
 | Language | TypeScript (strict) |
 | Build | Vite + @crxjs/vite-plugin |
 | UI | Preact |
-| Test | Vitest + jsdom |
+| Test | Vitest + jsdom (105 tests) |
 
 ## Getting Started
 
@@ -57,9 +66,9 @@ src/
 │   ├── modules/
 │   │   ├── element-drag.ts  # 오케스트레이터 (Grid + Drag + Selection 통합)
 │   │   └── drag/
-│   │       ├── drag-core.ts       # 마우스 드래그 메커니즘
+│   │       ├── drag-core.ts       # 마우스 드래그 + 마그네틱 스냅
 │   │       ├── grid-renderer.ts   # 컬럼 그리드 자동 감지 + 렌더링
-│   │       ├── snap-engine.ts     # 컬럼/베이스라인 스냅 계산
+│   │       ├── snap-engine.ts     # 컬럼/베이스라인 스냅 계산 (캐시)
 │   │       ├── snap-guides.ts     # 스냅 가이드 라인 표시
 │   │       └── selection-state.ts # 클릭 선택 + 방향키 이동
 │   ├── overlay-host.ts      # Shadow DOM 격리 오버레이
@@ -67,7 +76,9 @@ src/
 ├── sidepanel/               # Side Panel UI (Preact)
 │   ├── components/
 │   └── styles/
-└── shared/                  # 공유 타입, 메시지
+└── shared/                  # 공유 타입, 메시지, 에러 핸들링
+tests/
+└── unit/                    # 단위 테스트 (105 tests)
 ```
 
 ## License

@@ -34,44 +34,6 @@ export function getOverlayRoot(): ShadowRoot {
       border-radius: 2px;
       box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5), 0 0 0 3px rgba(139, 92, 246, 0.3);
     }
-    .xray-grid-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      overflow: hidden;
-    }
-    .xray-grid-columns {
-      position: absolute;
-      top: 0;
-      height: 100%;
-      display: flex;
-      gap: var(--xray-gutter, 0px);
-    }
-    .xray-grid-col {
-      flex: 1;
-      height: 100%;
-      background: rgba(59, 130, 246, 0.08);
-      border-left: 1px solid rgba(59, 130, 246, 0.25);
-      border-right: 1px solid rgba(59, 130, 246, 0.25);
-    }
-    .xray-grid-baseline {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      background-repeat: repeat;
-      background-size: 100% var(--xray-baseline, 24px);
-      background-image: linear-gradient(
-        to bottom,
-        rgba(239, 68, 68, 0.12) 1px,
-        transparent 1px
-      );
-    }
     .xray-snap-guide-v {
       position: fixed;
       top: 0;
@@ -98,6 +60,40 @@ export function getOverlayRoot(): ShadowRoot {
     }
     .xray-snap-flash {
       animation: xray-snap-flash 0.2s ease-out;
+    }
+    .xray-spacing-guide {
+      position: fixed;
+      background: #ec4899;
+      pointer-events: none;
+      border-style: dashed;
+      border-color: #ec4899;
+      border-width: 0;
+      opacity: 0;
+      transition: opacity 0.15s ease-out;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 10px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: #ec4899;
+    }
+    .xray-distance-label {
+      position: fixed;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease-out;
+      background: #ec4899;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 10px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      padding: 1px 4px;
+      border-radius: 3px;
+      white-space: nowrap;
+      line-height: 1.4;
     }
   `;
   shadowRoot.appendChild(style);

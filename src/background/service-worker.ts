@@ -35,11 +35,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (!isMessage(message)) return;
   const fromContentScript = !!sender.tab;
 
-  if (message.type === 'TOGGLE_FEATURE' || message.type === 'UPDATE_GRID_SETTINGS' || message.type === 'RESET_GRID_AUTO' || message.type === 'SET_GRID_VISIBLE') {
+  if (message.type === 'TOGGLE_FEATURE') {
     sendToActiveTab(message);
   }
 
-  if (fromContentScript && (message.type === 'CONTENT_READY' || message.type === 'FEATURE_STATE_CHANGED' || message.type === 'GRID_REPORT')) {
+  if (fromContentScript && (message.type === 'CONTENT_READY' || message.type === 'FEATURE_STATE_CHANGED')) {
     chrome.runtime.sendMessage(message).catch(swallowDisconnect);
   }
 

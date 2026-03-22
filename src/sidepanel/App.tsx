@@ -1,16 +1,13 @@
 import { useState, useEffect, useCallback } from 'preact/hooks';
 import { memo } from 'preact/compat';
-import type { FeatureId, GridReport } from '@shared/types';
+import type { FeatureId } from '@shared/types';
 import { isMessage } from '@shared/messages';
 import { FeatureToggle } from './components/FeatureToggle';
-import { DragGridConfig } from './components/DragGridConfig';
 
 const MemoToggle = memo(FeatureToggle);
 
 export function App() {
   const [dragEnabled, setDragEnabled] = useState(false);
-  const [gridVisible, setGridVisible] = useState(true);
-  const [gridReport, setGridReport] = useState<GridReport | null>(null);
 
   useEffect(() => {
     const handler = (message: unknown) => {
@@ -18,17 +15,11 @@ export function App() {
       switch (message.type) {
         case 'CONTENT_READY':
           setDragEnabled(false);
-          setGridReport(null);
-          setGridVisible(true);
           break;
         case 'FEATURE_STATE_CHANGED':
           if (message.feature === 'drag') {
             setDragEnabled(message.enabled);
-            if (!message.enabled) setGridReport(null);
           }
-          break;
-        case 'GRID_REPORT':
-          setGridReport(message.data);
           break;
       }
     };
@@ -46,19 +37,7 @@ export function App() {
           enabled,
         });
       });
-      if (!enabled) {
-        setGridReport(null);
-        setGridVisible(true);
-      }
       return enabled;
-    });
-  }, []);
-
-  const toggleGrid = useCallback(() => {
-    setGridVisible((prev) => {
-      const visible = !prev;
-      chrome.runtime.sendMessage({ type: 'SET_GRID_VISIBLE', visible });
-      return visible;
     });
   }, []);
 
@@ -77,23 +56,8 @@ export function App() {
         />
         {!dragEnabled && (
           <p class="onboarding-hint">
-            ON을 누르면 페이지 요소를 자유롭게 드래그할 수 있습니다. 그리드에 자동으로 스냅됩니다.
+            ON을 누르면 페이지 요소를 자유롭게 드래그할 수 있습니다. 주변 요소에 자동으로 스냅됩니다.
           </p>
-        )}
-        {dragEnabled && (
-          <>
-            <div class="grid-toggle">
-              <label class="grid-toggle__label">
-                <input
-                  type="checkbox"
-                  checked={gridVisible}
-                  onChange={toggleGrid}
-                />
-                Grid Overlay
-              </label>
-            </div>
-            {gridReport && <DragGridConfig report={gridReport} />}
-          </>
         )}
       </section>
     </div>

@@ -1,6 +1,6 @@
 import { isMessage, swallowDisconnect } from '../shared/messages';
 import type { FeatureId } from '../shared/types';
-import { activateDrag, deactivateDrag, applyGridSettings, resetGridAutoDetect, setGridVisible } from './modules/element-drag';
+import { activateDrag, deactivateDrag } from './modules/element-drag';
 
 const activeFeatures = new Set<FeatureId>();
 
@@ -29,21 +29,6 @@ chrome.runtime.onMessage.addListener((message: unknown) => {
         feature,
         enabled,
       }).catch(swallowDisconnect);
-      break;
-    }
-
-    case 'UPDATE_GRID_SETTINGS': {
-      applyGridSettings(message.data);
-      break;
-    }
-
-    case 'RESET_GRID_AUTO': {
-      resetGridAutoDetect();
-      break;
-    }
-
-    case 'SET_GRID_VISIBLE': {
-      setGridVisible(message.visible);
       break;
     }
   }

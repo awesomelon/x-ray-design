@@ -1,6 +1,7 @@
 import { getFeatureLayer } from '../../overlay-host';
-import { snapToGrid } from './snap-engine';
-import { renderSnapGuides, clearSnapGuides } from './snap-guides';
+import { snapToElements, scanVisibleElements, invalidateScanCache, detectEqualSpacing, computeDistances } from './snap-engine';
+import type { ElementRect } from '@shared/types';
+import { renderSnapGuides, clearSnapGuides, renderSpacingGuides, renderDistanceLabels, clearAllGuides } from './snap-guides';
 import {
   getSelected,
   replaceSelection,
@@ -9,7 +10,6 @@ import {
   refreshSelectionHighlight,
   pruneStale,
 } from './selection-state';
-import type { GridReport } from '@shared/types';
 
 // --- Constants ---
 
@@ -79,7 +79,7 @@ interface DragState {
   lastMouseY: number;
   wasSnappedX: boolean;
   wasSnappedY: boolean;
-  getGridReport: () => GridReport | null;
+  elementRects: ElementRect[];
 }
 
 function createInitialState(): DragState {
@@ -96,7 +96,7 @@ function createInitialState(): DragState {
     lastMouseY: 0,
     wasSnappedX: false,
     wasSnappedY: false,
-    getGridReport: () => null,
+    elementRects: [],
   };
 }
 
@@ -224,27 +224,31 @@ export function magneticInterpolate(
 // --- Snap helper ---
 
 function applySnap(rawLeft: number, rawTop: number, w: number, h: number): { left: number; top: number } {
-  const grid = state.getGridReport();
-  if (!grid) {
+  // Rescan elements (cache invalidates only on scroll change)
+  const draggedEls = new Set<HTMLElement>();
+  if (state.dragging) draggedEls.add(state.dragging.el);
+  for (const sec of state.secondaries) draggedEls.add(sec.el);
+  state.elementRects = scanVisibleElements(draggedEls);
+
+  if (state.elementRects.length === 0) {
     renderSnapGuides(null, null);
+    renderSpacingGuides([]);
+    renderDistanceLabels([]);
     return { left: rawLeft, top: rawTop };
   }
 
   const cbX = state.dragging?.cbOffsetX ?? 0;
   const cbY = state.dragging?.cbOffsetY ?? 0;
-  const snapped = snapToGrid(rawLeft + cbX, rawTop + cbY, w, h, grid);
+  const snapped = snapToElements(rawLeft + cbX, rawTop + cbY, w, h, state.elementRects);
 
   const snapTargetLeft = snapped.snapTargetLeft - cbX;
   const snapTargetTop = snapped.snapTargetTop - cbY;
-
-  const adaptiveZone = Math.min(MAGNETIC_ZONE, Math.max(1, grid.gutterWidth * 0.6));
-  const adaptiveBreakaway = adaptiveZone * (BREAKAWAY_ZONE / MAGNETIC_ZONE);
 
   let finalLeft = rawLeft;
   let finalTop = rawTop;
 
   if (snapped.nearestGuideX !== null) {
-    const xResult = magneticInterpolate(rawLeft, snapTargetLeft, snapped.nearestDistX, state.wasSnappedX, adaptiveZone, adaptiveBreakaway);
+    const xResult = magneticInterpolate(rawLeft, snapTargetLeft, snapped.nearestDistX, state.wasSnappedX);
     state.wasSnappedX = xResult.isSnapped;
     finalLeft = xResult.pos;
   } else {
@@ -252,7 +256,7 @@ function applySnap(rawLeft: number, rawTop: number, w: number, h: number): { lef
   }
 
   if (snapped.nearestGuideY !== null) {
-    const yResult = magneticInterpolate(rawTop, snapTargetTop, snapped.nearestDistY, state.wasSnappedY, adaptiveZone, adaptiveBreakaway);
+    const yResult = magneticInterpolate(rawTop, snapTargetTop, snapped.nearestDistY, state.wasSnappedY);
     state.wasSnappedY = yResult.isSnapped;
     finalTop = yResult.pos;
   } else {
@@ -263,6 +267,20 @@ function applySnap(rawLeft: number, rawTop: number, w: number, h: number): { lef
     state.wasSnappedX ? snapped.nearestGuideX : null,
     state.wasSnappedY ? snapped.nearestGuideY : null,
   );
+
+  // Compute spacing guides and distance labels
+  const dragRect: ElementRect = {
+    left: finalLeft + cbX, top: finalTop + cbY,
+    right: finalLeft + cbX + w, bottom: finalTop + cbY + h,
+    centerX: finalLeft + cbX + w / 2, centerY: finalTop + cbY + h / 2,
+    width: w, height: h,
+  };
+  const spacingX = detectEqualSpacing(dragRect, state.elementRects, 'x');
+  const spacingY = detectEqualSpacing(dragRect, state.elementRects, 'y');
+  renderSpacingGuides([...spacingX, ...spacingY]);
+
+  const distances = computeDistances(dragRect, state.elementRects);
+  renderDistanceLabels(distances);
 
   return { left: finalLeft, top: finalTop };
 }
@@ -351,7 +369,8 @@ function finishDrag(): void {
   document.body.style.cursor = 'grab';
   document.body.style.userSelect = '';
   clearHighlight();
-  clearSnapGuides();
+  clearAllGuides();
+  invalidateScanCache();
   state.hoveredEl = null;
 
   if (wasGroupDrag) {
@@ -491,7 +510,8 @@ function onKeyDown(e: KeyboardEvent): void {
       document.body.style.cursor = 'grab';
       document.body.style.userSelect = '';
       clearHighlight();
-      clearSnapGuides();
+      clearAllGuides();
+      invalidateScanCache();
       state.hoveredEl = null;
       replaceSelection(null);
     } else {
@@ -517,9 +537,8 @@ function onWindowMouseLeave(e: MouseEvent): void {
 
 // --- Public API ---
 
-export function initDragCore(deps: { getSnapGrid: () => GridReport | null }): void {
+export function initDragCore(): void {
   state.active = true;
-  state.getGridReport = deps.getSnapGrid;
   document.addEventListener('mousedown', onMouseDown, true);
   document.addEventListener('mousemove', onMouseMove, true);
   document.addEventListener('mouseup', onMouseUp, true);
@@ -534,7 +553,8 @@ export function initDragCore(deps: { getSnapGrid: () => GridReport | null }): vo
 export function teardownDragCore(): void {
   cancelAnimationFrame(state.rafId);
   clearHighlight();
-  clearSnapGuides();
+  clearAllGuides();
+  invalidateScanCache();
   document.removeEventListener('mousedown', onMouseDown, true);
   document.removeEventListener('mousemove', onMouseMove, true);
   document.removeEventListener('mouseup', onMouseUp, true);

@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.4.1] - 2026-03-30 — CSS Editor Input Fix
+
+### Fixed
+- CSS 에디터 input 필드에 타이핑/포커스가 불가능하던 버그 수정 — drag-core의 캡처 단계 이벤트 핸들러가 Shadow DOM event retargeting으로 인해 오버레이 내부 이벤트를 가로채고 있었음
+- CSS 에디터의 키보드 이벤트 격리(stopPropagation)가 Shadow DOM에서 작동하지 않던 버그 수정 — deepActive 패턴 적용
+
 ## [1.0.4.0] - 2026-03-30 — Inline CSS Editor
 
 ### Added

@@ -34,10 +34,11 @@ function onMouseUp(): void {
 
 function onKeyDown(e: KeyboardEvent): void {
   const active = document.activeElement;
-  if (!active || (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA')) return;
+  const deepActive = active?.shadowRoot?.activeElement ?? active;
+  if (!deepActive || (deepActive.tagName !== 'INPUT' && deepActive.tagName !== 'TEXTAREA')) return;
 
   if (e.key === 'Escape') {
-    (active as HTMLElement).blur();
+    (deepActive as HTMLElement).blur();
     return;
   }
 

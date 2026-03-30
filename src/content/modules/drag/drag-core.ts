@@ -451,6 +451,9 @@ function onMouseDown(e: MouseEvent): void {
 
   const el = e.target as HTMLElement;
 
+  // Let overlay handle its own events (CSS editor inputs etc.)
+  if (el.tagName.toLowerCase() === 'x-ray-overlay') return;
+
   if (shouldIgnore(el)) {
     e.preventDefault();
     e.stopPropagation();
@@ -535,11 +538,15 @@ function onMouseUp(): void {
 
 function onClick(e: MouseEvent): void {
   if (!state.active) return;
+
+  const el = e.target as HTMLElement;
+  // Let overlay handle its own events (CSS editor inputs etc.)
+  if (el.tagName.toLowerCase() === 'x-ray-overlay') return;
+
   e.preventDefault();
   e.stopPropagation();
 
   if (!state.dragging) {
-    const el = e.target as HTMLElement;
     if (!shouldIgnore(el)) {
       if (e.ctrlKey || e.metaKey) {
         toggleSelected(el);

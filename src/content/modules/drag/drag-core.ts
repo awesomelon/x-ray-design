@@ -112,6 +112,7 @@ let state = createInitialState();
 export function shouldIgnore(el: Element): boolean {
   if (!(el instanceof HTMLElement)) return true;
   if (IGNORE_TAGS.has(el.tagName)) return true;
+  if (el.tagName.toLowerCase() === 'x-ray-overlay') return true;
   if (el.closest('x-ray-overlay')) return true;
   return false;
 }

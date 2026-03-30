@@ -6,10 +6,20 @@ const selectedSet = new Set<HTMLElement>();
 const highlightBoxes = new Map<HTMLElement, HTMLDivElement>();
 let moveCallback: MoveCallback | null = null;
 
+type SelectionObserver = (selected: ReadonlySet<HTMLElement>) => void;
+const observers = new Set<SelectionObserver>();
+
+export function onSelectionChange(cb: SelectionObserver): void { observers.add(cb); }
+export function offSelectionChange(cb: SelectionObserver): void { observers.delete(cb); }
+function notifyObservers(): void { for (const cb of observers) cb(selectedSet); }
+
 const ARROW_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 
 function onKeyDown(e: KeyboardEvent): void {
   if (selectedSet.size === 0 || !ARROW_KEYS.has(e.key)) return;
+  const active = document.activeElement;
+  const deepActive = active?.shadowRoot?.activeElement ?? active;
+  if (deepActive && (deepActive.tagName === 'INPUT' || deepActive.tagName === 'TEXTAREA')) return;
 
   e.preventDefault();
   e.stopPropagation();
@@ -58,6 +68,7 @@ export function toggleSelected(el: HTMLElement): void {
     selectedSet.add(el);
     renderHighlightFor(el);
   }
+  notifyObservers();
 }
 
 export function replaceSelection(el: HTMLElement | null): void {
@@ -67,6 +78,7 @@ export function replaceSelection(el: HTMLElement | null): void {
     selectedSet.add(el);
     renderHighlightFor(el);
   }
+  notifyObservers();
 }
 
 export function getSelected(): ReadonlySet<HTMLElement> {

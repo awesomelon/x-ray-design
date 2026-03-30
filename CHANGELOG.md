@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.4.0] - 2026-03-30 — Inline CSS Editor
+
+### Added
+- 인라인 CSS 에디터 — 요소를 선택하면 플로팅 팝업으로 CSS 속성(width, height, margin, padding, gap, border-radius) 실시간 수정 가능
+- Selection observer API (`onSelectionChange`/`offSelectionChange`) — 선택 상태 변경 콜백 구독
+- Shadow DOM 내 pointer-events:auto 팝업 — 입력 필드가 있는 인터랙티브 오버레이
+- Side Panel에 CSS Editor 토글 추가
+- Shadow DOM focus 감지 — arrow key가 input 포커스 중 요소를 이동시키지 않음
+- `shouldIgnore`에 x-ray-overlay 호스트 태그 체크 추가 — 팝업 클릭이 드래그를 트리거하지 않음
+
+### Changed
+- `FeatureId` 타입에 `'css-editor'` 추가
+- `selection-state.ts`에 observer 패턴 도입 (notifyObservers)
+
 ## [1.0.3.0] - 2026-03-30 — Alt+Hover Distance Inspect
 
 ### Added

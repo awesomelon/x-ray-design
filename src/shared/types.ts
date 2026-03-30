@@ -1,4 +1,4 @@
-export type FeatureId = 'drag';
+export type FeatureId = 'drag' | 'css-editor';
 
 export interface ElementRect {
   left: number;

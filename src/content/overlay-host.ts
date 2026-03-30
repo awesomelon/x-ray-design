@@ -95,6 +95,48 @@ export function getOverlayRoot(): ShadowRoot {
       white-space: nowrap;
       line-height: 1.4;
     }
+    .xray-css-editor {
+      position: fixed;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 8px;
+      width: 200px;
+      pointer-events: auto;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      z-index: 1;
+    }
+    .xray-css-editor-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .xray-css-editor-row:last-child { margin-bottom: 0; }
+    .xray-css-editor label {
+      font-size: 10px;
+      font-weight: 500;
+      color: #888;
+      width: 80px;
+      flex-shrink: 0;
+    }
+    .xray-css-editor input {
+      width: 80px;
+      background: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 4px;
+      color: #e0e0e0;
+      font-size: 12px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      padding: 2px 6px;
+      outline: none;
+      pointer-events: auto;
+    }
+    .xray-css-editor input:focus {
+      border-color: #8b5cf6;
+    }
     .xray-connector-line {
       position: fixed;
       pointer-events: none;

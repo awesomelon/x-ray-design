@@ -95,6 +95,15 @@ export function getOverlayRoot(): ShadowRoot {
       white-space: nowrap;
       line-height: 1.4;
     }
+    .xray-connector-line {
+      position: fixed;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease-out;
+      border-color: #ec4899;
+      border-style: dashed;
+      border-width: 0;
+    }
   `;
   shadowRoot.appendChild(style);
 

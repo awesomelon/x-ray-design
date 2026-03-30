@@ -77,6 +77,16 @@ describe('shouldIgnore', () => {
     }
   });
 
+  it('ignores x-ray-overlay host element', () => {
+    const overlay = document.createElement('x-ray-overlay');
+    document.body.appendChild(overlay);
+    try {
+      expect(shouldIgnore(overlay)).toBe(true);
+    } finally {
+      overlay.remove();
+    }
+  });
+
   it('allows element outside x-ray-overlay', () => {
     const container = document.createElement('div');
     const child = document.createElement('div');
@@ -155,5 +165,41 @@ describe('onClick — empty space clears selection', () => {
     document.dispatchEvent(click);
 
     expect(getSelected().size).toBe(1);
+  });
+
+  it('preserves selection when clicking on x-ray-overlay (Shadow DOM passthrough)', () => {
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    el.getBoundingClientRect = () => ({
+      left: 10, top: 10, width: 100, height: 50,
+      right: 110, bottom: 60, x: 10, y: 10, toJSON: () => ({}),
+    });
+    replaceSelection(el);
+    expect(getSelected().size).toBe(1);
+
+    const overlay = document.createElement('x-ray-overlay');
+    document.body.appendChild(overlay);
+
+    const click = new MouseEvent('click', { bubbles: true });
+    Object.defineProperty(click, 'target', { value: overlay });
+    document.dispatchEvent(click);
+
+    // Selection should NOT be cleared — overlay events pass through
+    expect(getSelected().size).toBe(1);
+    overlay.remove();
+  });
+
+  it('does not call preventDefault on mousedown targeting x-ray-overlay', () => {
+    const overlay = document.createElement('x-ray-overlay');
+    document.body.appendChild(overlay);
+
+    const mousedown = new MouseEvent('mousedown', { bubbles: true });
+    Object.defineProperty(mousedown, 'target', { value: overlay });
+    const spy = vi.spyOn(mousedown, 'preventDefault');
+    document.dispatchEvent(mousedown);
+
+    // overlay events should pass through without preventDefault
+    expect(spy).not.toHaveBeenCalled();
+    overlay.remove();
   });
 });

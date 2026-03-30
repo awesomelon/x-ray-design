@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.3.0] - 2026-03-30 — Alt+Hover Distance Inspect
+
+### Added
+- Alt+hover 거리 확인 모드 (Figma Inspect 스타일) — 드래그 없이 Alt 키를 누른 채 호버하면 주변 요소까지의 거리를 실시간 표시
+- Selection-aware inspect — 요소를 선택한 상태에서 Alt+hover 시 선택 요소와 호버 요소 간 직접 거리 표시
+- 멀티 셀렉트 inspect — 여러 요소 선택 시 호버에 가장 가까운 선택 요소 기준 거리 표시
+- `computeDirectDistance()` — 두 특정 요소 간 4방향 거리 계산 함수
+- 연결선 렌더링 — Mode 2에서 두 요소 사이 마젠타 dashed 연결선 표시
+- `visibilitychange` / `blur` 리스너 — 탭 전환 시 Alt stuck 방지
+
+### Changed
+- `overlapMidpoint()` export — 외부에서 재사용 가능하도록 변경
+- `scanVisibleElements()`에 `skipLargeFilter` 옵션 추가 — inspect 모드에서 대형 컨테이너도 스캔 대상 포함
+- `filterAndMakeRect()`에 `skipLargeFilter` 옵션 추가
+- `clearAllGuides()`에 connector line 정리 포함
+
 ## [1.0.2.0] - 2026-03-22 — Element-Based Magnetic Snap
 
 ### Added

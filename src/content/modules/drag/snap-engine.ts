@@ -13,7 +13,7 @@ export function makeElementRect(left: number, top: number, width: number, height
   };
 }
 
-function overlapMidpoint(aStart: number, aEnd: number, bStart: number, bEnd: number): number {
+export function overlapMidpoint(aStart: number, aEnd: number, bStart: number, bEnd: number): number {
   const start = Math.max(aStart, bStart);
   return start + (Math.min(aEnd, bEnd) - start) / 2;
 }
@@ -101,7 +101,7 @@ let cachedLines: { xLines: number[]; yLines: number[] } = { xLines: [], yLines: 
 let cachedScrollX = -1;
 let cachedScrollY = -1;
 
-export function scanVisibleElements(draggedEls: Set<HTMLElement>): ElementRect[] {
+export function scanVisibleElements(draggedEls: Set<HTMLElement>, skipLargeFilter = false): ElementRect[] {
   try {
     // Invalidate cache when scroll position changes
     const sx = window.scrollX;
@@ -129,14 +129,14 @@ export function scanVisibleElements(draggedEls: Set<HTMLElement>): ElementRect[]
       for (const child of parent.children) {
         if (seen.has(child)) continue;
         seen.add(child);
-        const r = filterAndMakeRect(child as HTMLElement, vpW, vpH);
+        const r = filterAndMakeRect(child as HTMLElement, vpW, vpH, skipLargeFilter);
         if (r) rects.push(r);
       }
 
       // Parent itself as container boundary
       if (!seen.has(parent)) {
         seen.add(parent);
-        const r = filterAndMakeRect(parent, vpW, vpH);
+        const r = filterAndMakeRect(parent, vpW, vpH, skipLargeFilter);
         if (r) rects.push(r);
       }
 
@@ -146,7 +146,7 @@ export function scanVisibleElements(draggedEls: Set<HTMLElement>): ElementRect[]
         for (const uncle of grandparent.children) {
           if (seen.has(uncle) || uncle === parent) continue;
           seen.add(uncle);
-          const r = filterAndMakeRect(uncle as HTMLElement, vpW, vpH);
+          const r = filterAndMakeRect(uncle as HTMLElement, vpW, vpH, skipLargeFilter);
           if (r) rects.push(r);
         }
       }
@@ -164,10 +164,11 @@ export function filterAndMakeRect(
   el: HTMLElement,
   viewportWidth: number,
   viewportHeight: number,
+  skipLargeFilter = false,
 ): ElementRect | null {
   const r = el.getBoundingClientRect();
   if (r.width < 5 || r.height < 5) return null;
-  if (r.width > viewportWidth * 0.8 && r.height > viewportHeight * 0.8) return null;
+  if (!skipLargeFilter && r.width > viewportWidth * 0.8 && r.height > viewportHeight * 0.8) return null;
   return makeElementRect(r.left, r.top, r.width, r.height);
 }
 
@@ -443,8 +444,6 @@ export function computeDistances(
 ): DistanceLabel[] {
   const labels: DistanceLabel[] = [];
 
-  // LEFT: elements whose right edge is to the left of dragRect's left edge,
-  // and vertically overlapping
   let bestLeft: { rect: ElementRect; dist: number } | null = null;
   let bestRight: { rect: ElementRect; dist: number } | null = null;
   let bestUp: { rect: ElementRect; dist: number } | null = null;
@@ -454,7 +453,6 @@ export function computeDistances(
     const vOverlap = r.bottom > dragRect.top && r.top < dragRect.bottom;
     const hOverlap = r.right > dragRect.left && r.left < dragRect.right;
 
-    // Left neighbor
     if (vOverlap && r.right <= dragRect.left) {
       const dist = dragRect.left - r.right;
       if (dist <= DISTANCE_MAX_RANGE && (!bestLeft || dist < bestLeft.dist)) {
@@ -462,7 +460,6 @@ export function computeDistances(
       }
     }
 
-    // Right neighbor
     if (vOverlap && r.left >= dragRect.right) {
       const dist = r.left - dragRect.right;
       if (dist <= DISTANCE_MAX_RANGE && (!bestRight || dist < bestRight.dist)) {
@@ -470,7 +467,6 @@ export function computeDistances(
       }
     }
 
-    // Up neighbor
     if (hOverlap && r.bottom <= dragRect.top) {
       const dist = dragRect.top - r.bottom;
       if (dist <= DISTANCE_MAX_RANGE && (!bestUp || dist < bestUp.dist)) {
@@ -478,7 +474,6 @@ export function computeDistances(
       }
     }
 
-    // Down neighbor
     if (hOverlap && r.top >= dragRect.bottom) {
       const dist = r.top - dragRect.bottom;
       if (dist <= DISTANCE_MAX_RANGE && (!bestDown || dist < bestDown.dist)) {
@@ -517,6 +512,66 @@ export function computeDistances(
       crossPos: overlapMidpoint(dragRect.left, dragRect.right, bestDown.rect.left, bestDown.rect.right),
       distance: bestDown.dist,
     });
+  }
+
+  return labels;
+}
+
+export function computeDirectDistance(
+  rectA: ElementRect,
+  rectB: ElementRect,
+): DistanceLabel[] {
+  const labels: DistanceLabel[] = [];
+
+  const vOverlap = rectA.bottom > rectB.top && rectA.top < rectB.bottom;
+  const hOverlap = rectA.right > rectB.left && rectA.left < rectB.right;
+
+  // Left: B is to the left of A
+  if (vOverlap && rectB.right <= rectA.left) {
+    const dist = rectA.left - rectB.right;
+    if (dist > 0) {
+      labels.push({
+        axis: 'x', from: rectB.right, to: rectA.left,
+        crossPos: overlapMidpoint(rectA.top, rectA.bottom, rectB.top, rectB.bottom),
+        distance: dist,
+      });
+    }
+  }
+
+  // Right: B is to the right of A
+  if (vOverlap && rectB.left >= rectA.right) {
+    const dist = rectB.left - rectA.right;
+    if (dist > 0) {
+      labels.push({
+        axis: 'x', from: rectA.right, to: rectB.left,
+        crossPos: overlapMidpoint(rectA.top, rectA.bottom, rectB.top, rectB.bottom),
+        distance: dist,
+      });
+    }
+  }
+
+  // Up: B is above A
+  if (hOverlap && rectB.bottom <= rectA.top) {
+    const dist = rectA.top - rectB.bottom;
+    if (dist > 0) {
+      labels.push({
+        axis: 'y', from: rectB.bottom, to: rectA.top,
+        crossPos: overlapMidpoint(rectA.left, rectA.right, rectB.left, rectB.right),
+        distance: dist,
+      });
+    }
+  }
+
+  // Down: B is below A
+  if (hOverlap && rectB.top >= rectA.bottom) {
+    const dist = rectB.top - rectA.bottom;
+    if (dist > 0) {
+      labels.push({
+        axis: 'y', from: rectA.bottom, to: rectB.top,
+        crossPos: overlapMidpoint(rectA.left, rectA.right, rectB.left, rectB.right),
+        distance: dist,
+      });
+    }
   }
 
   return labels;

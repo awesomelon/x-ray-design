@@ -4,8 +4,10 @@ import {
   collectSnapLines,
   detectEqualSpacing,
   computeDistances,
+  computeDirectDistance,
   findNearest,
   snapAxisToLines,
+  overlapMidpoint,
   SNAP_THRESHOLD,
 } from '../../src/content/modules/drag/snap-engine';
 import type { ElementRect } from '../../src/shared/types';
@@ -396,5 +398,103 @@ describe('computeDistances', () => {
     const drag = makeRect(200, 200, 50, 50);
     const labels = computeDistances(drag, []);
     expect(labels).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// overlapMidpoint (now exported)
+// ---------------------------------------------------------------------------
+
+describe('overlapMidpoint', () => {
+  it('returns midpoint of overlapping range', () => {
+    expect(overlapMidpoint(100, 200, 150, 250)).toBe(175);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// computeDirectDistance
+// ---------------------------------------------------------------------------
+
+describe('computeDirectDistance', () => {
+  it('horizontal gap — B to the right of A', () => {
+    const a = makeRect(100, 100, 50, 50); // 100..150
+    const b = makeRect(200, 100, 50, 50); // 200..250
+    const labels = computeDirectDistance(a, b);
+    expect(labels).toHaveLength(1);
+    expect(labels[0].axis).toBe('x');
+    expect(labels[0].distance).toBe(50);
+    expect(labels[0].from).toBe(150);
+    expect(labels[0].to).toBe(200);
+  });
+
+  it('horizontal gap — B to the left of A', () => {
+    const a = makeRect(200, 100, 50, 50);
+    const b = makeRect(50, 100, 50, 50); // 50..100
+    const labels = computeDirectDistance(a, b);
+    expect(labels).toHaveLength(1);
+    expect(labels[0].axis).toBe('x');
+    expect(labels[0].distance).toBe(100);
+  });
+
+  it('vertical gap — B below A', () => {
+    const a = makeRect(100, 100, 50, 50); // top 100..150
+    const b = makeRect(100, 200, 50, 50); // top 200..250
+    const labels = computeDirectDistance(a, b);
+    expect(labels).toHaveLength(1);
+    expect(labels[0].axis).toBe('y');
+    expect(labels[0].distance).toBe(50);
+  });
+
+  it('vertical gap — B above A', () => {
+    const a = makeRect(100, 200, 50, 50);
+    const b = makeRect(100, 50, 50, 50); // 50..100, gap = 200 - 100 = 100
+    const labels = computeDirectDistance(a, b);
+    expect(labels).toHaveLength(1);
+    expect(labels[0].axis).toBe('y');
+    expect(labels[0].distance).toBe(100);
+  });
+
+  it('vertical overlap, horizontal gap — shows x only', () => {
+    const a = makeRect(100, 100, 50, 80);  // y: 100..180
+    const b = makeRect(200, 120, 50, 40);  // y: 120..160, overlaps vertically
+    const labels = computeDirectDistance(a, b);
+    expect(labels).toHaveLength(1);
+    expect(labels[0].axis).toBe('x');
+  });
+
+  it('partial overlap on both axes — returns empty', () => {
+    const a = makeRect(100, 100, 50, 50);
+    const b = makeRect(120, 120, 50, 50); // overlaps on both axes
+    const labels = computeDirectDistance(a, b);
+    expect(labels).toHaveLength(0);
+  });
+
+  it('complete overlap — returns empty', () => {
+    const a = makeRect(100, 100, 100, 100);
+    const b = makeRect(120, 120, 30, 30); // inside A
+    const labels = computeDirectDistance(a, b);
+    expect(labels).toHaveLength(0);
+  });
+
+  it('touching (gap=0) — returns empty', () => {
+    const a = makeRect(100, 100, 50, 50); // right = 150
+    const b = makeRect(150, 100, 50, 50); // left = 150
+    const labels = computeDirectDistance(a, b);
+    expect(labels).toHaveLength(0);
+  });
+
+  it('diagonal separation (no overlap on either axis) — returns empty', () => {
+    const a = makeRect(100, 100, 50, 50); // 100..150
+    const b = makeRect(200, 200, 50, 50); // 200..250
+    const labels = computeDirectDistance(a, b);
+    expect(labels).toHaveLength(0);
+  });
+
+  it('crossPos uses overlap midpoint', () => {
+    const a = makeRect(100, 100, 50, 100); // y: 100..200
+    const b = makeRect(200, 150, 50, 100); // y: 150..250, overlap 150..200
+    const labels = computeDirectDistance(a, b);
+    expect(labels).toHaveLength(1);
+    expect(labels[0].crossPos).toBe(175); // midpoint of 150..200
   });
 });

@@ -10,6 +10,8 @@ let prevSnapY = false;
 let spacingEls: HTMLDivElement[] = [];
 // Distance label elements pool
 let distanceEls: HTMLDivElement[] = [];
+// Connector line elements pool
+let connectorEls: HTMLDivElement[] = [];
 
 export function renderSnapGuides(snapLineX: number | null, snapLineY: number | null): void {
   const layer = getFeatureLayer('drag');
@@ -132,6 +134,40 @@ export function renderDistanceLabels(labels: DistanceLabel[]): void {
   }
 }
 
+export function renderConnectorLines(labels: DistanceLabel[]): void {
+  const layer = getFeatureLayer('drag');
+
+  while (connectorEls.length < labels.length) {
+    const el = document.createElement('div');
+    el.className = 'xray-connector-line';
+    layer.appendChild(el);
+    connectorEls.push(el);
+  }
+
+  for (let i = 0; i < connectorEls.length; i++) {
+    if (i < labels.length) {
+      const l = labels[i];
+      const el = connectorEls[i];
+      if (!el.isConnected) layer.appendChild(el);
+
+      if (l.axis === 'x') {
+        el.style.cssText =
+          `left:${l.from}px;top:${l.crossPos}px;width:${l.to - l.from}px;height:0;border-top-width:1px;opacity:1;`;
+      } else {
+        el.style.cssText =
+          `left:${l.crossPos}px;top:${l.from}px;width:0;height:${l.to - l.from}px;border-left-width:1px;opacity:1;`;
+      }
+    } else {
+      connectorEls[i].style.opacity = '0';
+    }
+  }
+}
+
+export function clearConnectorLines(): void {
+  for (const el of connectorEls) el.remove();
+  connectorEls = [];
+}
+
 export function clearSnapGuides(): void {
   if (guideX) { guideX.remove(); guideX = null; }
   if (guideY) { guideY.remove(); guideY = null; }
@@ -145,4 +181,5 @@ export function clearAllGuides(): void {
   spacingEls = [];
   for (const el of distanceEls) el.remove();
   distanceEls = [];
+  clearConnectorLines();
 }

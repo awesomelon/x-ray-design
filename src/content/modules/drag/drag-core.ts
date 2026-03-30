@@ -1,6 +1,6 @@
 import { getFeatureLayer } from '../../overlay-host';
-import { snapToElements, scanVisibleElements, invalidateScanCache, detectEqualSpacing, computeDistances, makeElementRect } from './snap-engine';
-import { renderSnapGuides, renderSpacingGuides, renderDistanceLabels, clearAllGuides } from './snap-guides';
+import { snapToElements, scanVisibleElements, invalidateScanCache, detectEqualSpacing, computeDistances, computeDirectDistance, makeElementRect } from './snap-engine';
+import { renderSnapGuides, renderSpacingGuides, renderDistanceLabels, renderConnectorLines, clearAllGuides } from './snap-guides';
 import {
   getSelected,
   replaceSelection,
@@ -79,6 +79,9 @@ interface DragState {
   lastMouseY: number;
   wasSnappedX: boolean;
   wasSnappedY: boolean;
+  altPressed: boolean;
+  inspectRafId: number;
+  lastInspectEl: HTMLElement | null;
 }
 
 function createInitialState(): DragState {
@@ -96,6 +99,9 @@ function createInitialState(): DragState {
     lastMouseY: 0,
     wasSnappedX: false,
     wasSnappedY: false,
+    altPressed: false,
+    inspectRafId: 0,
+    lastInspectEl: null,
   };
 }
 
@@ -274,6 +280,66 @@ function applySnap(rawLeft: number, rawTop: number, w: number, h: number): { lef
   return { left: finalLeft, top: finalTop };
 }
 
+// --- Inspect mode ---
+
+function showInspectDistances(hoveredEl: HTMLElement): void {
+  const selectedSet = getSelected();
+  const hoveredRect = hoveredEl.getBoundingClientRect();
+  const hRect = makeElementRect(hoveredRect.left, hoveredRect.top, hoveredRect.width, hoveredRect.height);
+
+  if (selectedSet.size > 0 && !selectedSet.has(hoveredEl)) {
+    // Mode 2: Selection-aware — find closest selected element
+    let closestEl: HTMLElement | null = null;
+    let closestDist = Infinity;
+    for (const sel of selectedSet) {
+      const selRect = sel.getBoundingClientRect();
+      const dx = (selRect.left + selRect.width / 2) - (hoveredRect.left + hoveredRect.width / 2);
+      const dy = (selRect.top + selRect.height / 2) - (hoveredRect.top + hoveredRect.height / 2);
+      const dist = dx * dx + dy * dy;
+      if (dist < closestDist) {
+        closestDist = dist;
+        closestEl = sel;
+      }
+    }
+    if (closestEl) {
+      const selBcr = closestEl.getBoundingClientRect();
+      const sRect = makeElementRect(selBcr.left, selBcr.top, selBcr.width, selBcr.height);
+      const labels = computeDirectDistance(sRect, hRect);
+      renderDistanceLabels(labels);
+      renderConnectorLines(labels);
+      renderSpacingGuides([]);
+      renderSnapGuides(null, null);
+    }
+  } else {
+    // Mode 1: No selection (or hovering self) — show 4-direction neighbors
+    // Invalidate cache if hover target's parent changed
+    if (state.lastInspectEl && state.lastInspectEl.parentElement !== hoveredEl.parentElement) {
+      invalidateScanCache();
+    }
+    state.lastInspectEl = hoveredEl;
+
+    const elementRects = scanVisibleElements(new Set([hoveredEl]), true);
+    if (elementRects.length === 0) {
+      renderDistanceLabels([]);
+      renderConnectorLines([]);
+      return;
+    }
+    const labels = computeDistances(hRect, elementRects);
+    renderDistanceLabels(labels);
+    renderConnectorLines([]);
+    renderSpacingGuides([]);
+    renderSnapGuides(null, null);
+  }
+}
+
+function clearInspect(): void {
+  cancelAnimationFrame(state.inspectRafId);
+  state.inspectRafId = 0;
+  state.altPressed = false;
+  state.lastInspectEl = null;
+  clearAllGuides();
+}
+
 // --- Drag core ---
 
 function commitDrag(pending: PendingDrag, e: MouseEvent): void {
@@ -375,6 +441,13 @@ function finishDrag(): void {
 
 function onMouseDown(e: MouseEvent): void {
   if (!state.active || state.dragging) return;
+
+  // Clear inspect mode on mousedown (drag takes priority)
+  if (state.altPressed) {
+    clearInspect();
+    invalidateScanCache();
+  }
+
   const el = e.target as HTMLElement;
 
   if (shouldIgnore(el)) {
@@ -438,6 +511,18 @@ function onMouseMove(e: MouseEvent): void {
   if (shouldIgnore(el) || el === state.hoveredEl) return;
   state.hoveredEl = el;
   renderHighlight(el);
+
+  // Inspect mode: show distances on Alt+hover
+  if (state.altPressed && !state.dragging && !state.pending) {
+    if (!state.inspectRafId) {
+      state.inspectRafId = requestAnimationFrame(() => {
+        state.inspectRafId = 0;
+        if (state.altPressed && state.hoveredEl && !state.dragging) {
+          showInspectDistances(state.hoveredEl);
+        }
+      });
+    }
+  }
 }
 
 function onMouseUp(): void {
@@ -475,6 +560,16 @@ function onDragStart(e: DragEvent): void {
 
 function onKeyDown(e: KeyboardEvent): void {
   if (!state.active) return;
+
+  if (e.key === 'Alt' && !state.dragging) {
+    state.altPressed = true;
+    // Show distances immediately for current hover target
+    if (state.hoveredEl) {
+      showInspectDistances(state.hoveredEl);
+    }
+    return;
+  }
+
   if (e.key === 'Escape') {
     if (state.dragging) {
       const el = state.dragging.el;
@@ -513,6 +608,23 @@ function onKeyDown(e: KeyboardEvent): void {
   }
 }
 
+function onKeyUp(e: KeyboardEvent): void {
+  if (!state.active) return;
+  if (e.key === 'Alt') {
+    clearInspect();
+  }
+}
+
+function onVisibilityChange(): void {
+  if (document.hidden && state.altPressed) {
+    clearInspect();
+  }
+}
+
+function onWindowBlur(): void {
+  if (state.altPressed) clearInspect();
+}
+
 function onScroll(): void {
   if (!state.active || state.dragging || state.pending) return;
   state.hoveredEl = null;
@@ -536,13 +648,17 @@ export function initDragCore(): void {
   document.addEventListener('click', onClick, true);
   document.addEventListener('dragstart', onDragStart, true);
   document.addEventListener('keydown', onKeyDown, true);
+  document.addEventListener('keyup', onKeyUp, true);
   document.addEventListener('scroll', onScroll, true);
   document.addEventListener('mouseleave', onWindowMouseLeave);
+  document.addEventListener('visibilitychange', onVisibilityChange);
+  window.addEventListener('blur', onWindowBlur);
   document.body.style.cursor = 'grab';
 }
 
 export function teardownDragCore(): void {
   cancelAnimationFrame(state.rafId);
+  cancelAnimationFrame(state.inspectRafId);
   clearHighlight();
   clearAllGuides();
   invalidateScanCache();
@@ -552,8 +668,11 @@ export function teardownDragCore(): void {
   document.removeEventListener('click', onClick, true);
   document.removeEventListener('dragstart', onDragStart, true);
   document.removeEventListener('keydown', onKeyDown, true);
+  document.removeEventListener('keyup', onKeyUp, true);
   document.removeEventListener('scroll', onScroll, true);
   document.removeEventListener('mouseleave', onWindowMouseLeave);
+  document.removeEventListener('visibilitychange', onVisibilityChange);
+  window.removeEventListener('blur', onWindowBlur);
   document.body.style.cursor = '';
   document.body.style.userSelect = '';
   resetAll();

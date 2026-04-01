@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'preact/hooks';
+import { useState, useCallback, useRef, useEffect } from 'preact/hooks';
 import type { OverlaySettings } from '@shared/types';
 import { swallowDisconnect } from '@shared/messages';
 
@@ -24,6 +24,18 @@ export function OverlaySection({ active }: Readonly<Props>) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Check for existing overlay image on activation (#8 fix)
+  useEffect(() => {
+    if (!active) return;
+    (async () => {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!tab?.id) return;
+      const key = `overlay_image_${tab.id}`;
+      const data = await chrome.storage.local.get(key);
+      if (data[key]) setHasImage(true);
+    })();
+  }, [active]);
 
   const sendSettings = useCallback((partial: Partial<OverlaySettings>) => {
     chrome.runtime.sendMessage({
@@ -54,6 +66,11 @@ export function OverlaySection({ active }: Readonly<Props>) {
       }
       setHasImage(true);
       setSettings({ ...defaults });
+      // Sync default settings to content script (#10 fix)
+      chrome.runtime.sendMessage({
+        type: 'OVERLAY_SETTINGS_UPDATE',
+        settings: { ...defaults },
+      }).catch(swallowDisconnect);
     };
     reader.onerror = () => setError('이미지를 읽을 수 없습니다.');
     reader.readAsDataURL(file);

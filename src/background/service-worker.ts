@@ -45,10 +45,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendToActiveTab(message);
   }
 
-  // Forward overlay messages from side panel to active tab
-  if (message.type === 'OVERLAY_SETTINGS_UPDATE' ||
-      message.type === 'OVERLAY_CLEAR' ||
-      message.type === 'OVERLAY_FIT_TO_VIEWPORT') {
+  // Forward overlay messages from side panel to active tab (not from content scripts)
+  if (!fromContentScript && (
+    message.type === 'OVERLAY_SETTINGS_UPDATE' ||
+    message.type === 'OVERLAY_CLEAR' ||
+    message.type === 'OVERLAY_FIT_TO_VIEWPORT')) {
     sendToActiveTab(message);
   }
 

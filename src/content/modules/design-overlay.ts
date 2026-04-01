@@ -3,7 +3,7 @@ import { isMessage, swallowDisconnect } from '@shared/messages';
 import type { OverlaySettings } from '@shared/types';
 
 const STORAGE_KEY_PREFIX = 'overlay_image_';
-const SETTINGS_KEY = 'overlay_settings';
+const SETTINGS_KEY_PREFIX = 'overlay_settings_';
 
 let imgEl: HTMLImageElement | null = null;
 let containerEl: HTMLDivElement | null = null;
@@ -23,6 +23,21 @@ let currentSettings: OverlaySettings = { ...defaults };
 
 function storageKey(): string {
   return `${STORAGE_KEY_PREFIX}${tabId ?? 'unknown'}`;
+}
+
+function settingsKey(): string {
+  return `${SETTINGS_KEY_PREFIX}${tabId ?? 'unknown'}`;
+}
+
+function clampSettings(s: OverlaySettings): OverlaySettings {
+  return {
+    opacity: Math.max(0, Math.min(100, s.opacity || 0)),
+    x: Number.isFinite(s.x) ? s.x : 0,
+    y: Number.isFinite(s.y) ? s.y : 0,
+    scale: Math.max(10, Math.min(500, s.scale || 100)),
+    blend: s.blend === 'difference' ? 'difference' : 'normal',
+    scroll: s.scroll === 'scroll' ? 'scroll' : 'fixed',
+  };
 }
 
 function applySettings(): void {
@@ -122,7 +137,7 @@ function handleFitToViewport(): void {
 }
 
 function persistSettings(): void {
-  chrome.storage.local.set({ [SETTINGS_KEY]: currentSettings }).catch(() => {});
+  chrome.storage.local.set({ [settingsKey()]: currentSettings }).catch(() => {});
 }
 
 function onMessage(message: unknown): void {
@@ -131,6 +146,7 @@ function onMessage(message: unknown): void {
   switch (message.type) {
     case 'OVERLAY_SETTINGS_UPDATE': {
       Object.assign(currentSettings, message.settings);
+      currentSettings = clampSettings(currentSettings);
       applySettings();
       persistSettings();
       break;
@@ -163,13 +179,14 @@ async function resolveTabId(): Promise<void> {
 }
 
 async function restoreState(): Promise<void> {
-  const key = storageKey();
-  const data = await chrome.storage.local.get([key, SETTINGS_KEY]);
-  if (data[SETTINGS_KEY]) {
-    currentSettings = { ...defaults, ...data[SETTINGS_KEY] };
+  const imgKey = storageKey();
+  const setKey = settingsKey();
+  const data = await chrome.storage.local.get([imgKey, setKey]);
+  if (data[setKey]) {
+    currentSettings = clampSettings({ ...defaults, ...data[setKey] });
   }
-  if (data[key]) {
-    showImage(data[key] as string);
+  if (data[imgKey]) {
+    showImage(data[imgKey] as string);
   }
 }
 

@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0.0] - 2026-04-01 — Design Overlay
+
+### Added
+- 디자인 오버레이 — 디자인 이미지를 웹페이지 위에 반투명으로 겹쳐 시안과 실제 구현을 비교할 수 있는 기능
+- Side Panel에 Design Overlay 토글 + 드롭존 UI 추가
+- 이미지 드래그앤드롭 또는 파일 선택으로 오버레이 로드 (PNG, JPG, WebP, 최대 5MB)
+- Opacity 슬라이더, Scale/X/Y 미세 조정, "맞추기" 버튼(뷰포트 너비 자동 fit)
+- Blend 모드 전환 (Normal/Difference) — 다크 페이지에서 차이 확인에 유용
+- Scroll 모드 전환 (Fixed/Scroll) — 페이지 스크롤에 오버레이 동기화
+- Tab별 이미지 격리 — 여러 탭에서 독립적으로 오버레이 사용 가능
+- 탭 새로고침 시 오버레이 상태 자동 복원 (chrome.storage.local)
+
+### Changed
+- `FeatureId` 타입에 `'overlay'` 추가
+- `manifest.json`에 `storage`, `unlimitedStorage` 권한 추가
+- service worker에 오버레이 메시지 포워딩 + GET_TAB_ID 핸들러 추가
+- App.tsx의 feature toggle 로직을 공통 `toggleFeature` 헬퍼로 DRY 개선
+
 ## [1.0.4.1] - 2026-03-30 — CSS Editor Input Fix
 
 ### Fixed

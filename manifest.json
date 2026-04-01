@@ -3,7 +3,7 @@
   "name": "Snap",
   "version": "1.1.0",
   "description": "웹페이지 요소를 드래그하여 레이아웃을 탐색합니다",
-  "permissions": ["activeTab", "sidePanel"],
+  "permissions": ["activeTab", "sidePanel", "storage", "unlimitedStorage"],
   "side_panel": {
     "default_path": "src/sidepanel/index.html"
   },

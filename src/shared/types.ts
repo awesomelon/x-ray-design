@@ -1,4 +1,13 @@
-export type FeatureId = 'drag' | 'css-editor';
+export type FeatureId = 'drag' | 'css-editor' | 'overlay';
+
+export interface OverlaySettings {
+  opacity: number;       // 0-100
+  x: number;             // px offset
+  y: number;             // px offset
+  scale: number;         // percentage, 100 = original
+  blend: 'normal' | 'difference';
+  scroll: 'fixed' | 'scroll';
+}
 
 export interface ElementRect {
   left: number;

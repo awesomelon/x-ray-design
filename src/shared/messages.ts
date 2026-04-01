@@ -1,9 +1,13 @@
-import type { FeatureId } from './types';
+import type { FeatureId, OverlaySettings } from './types';
 
 export type Message =
   | { type: 'TOGGLE_FEATURE'; feature: FeatureId; enabled: boolean }
   | { type: 'FEATURE_STATE_CHANGED'; feature: FeatureId; enabled: boolean }
-  | { type: 'CONTENT_READY' };
+  | { type: 'CONTENT_READY' }
+  | { type: 'OVERLAY_SETTINGS_UPDATE'; settings: Partial<OverlaySettings> }
+  | { type: 'OVERLAY_CLEAR' }
+  | { type: 'OVERLAY_FIT_TO_VIEWPORT' }
+  | { type: 'OVERLAY_FIT_RESULT'; scale: number; x: number; y: number };
 
 export function isMessage(value: unknown): value is Message {
   return (
